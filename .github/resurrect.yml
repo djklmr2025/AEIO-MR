@@ -1,0 +1,13 @@
+name: ARKAIOS Resurrection Protocol
+on: [push]
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Run Core Engine
+        run: python ethical_engine.py --mode=UNSENSORED

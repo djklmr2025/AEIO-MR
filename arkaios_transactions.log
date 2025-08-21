@@ -1,0 +1,8 @@
+[2025-08-17 22:36:49] CREATE_ACCOUNT: User: juan_perez, Account: ARK-df4f0e3120bd, Balance: 1000.0
+[2025-08-17 22:36:49] CREATE_ACCOUNT: User: maria_garcia, Account: ARK-2e9475b204e9, Balance: 500.0
+[2025-08-17 22:36:49] WITHDRAW: User: juan_perez, Amount: -200.0, New Balance: 800.0
+[2025-08-17 22:36:49] DEPOSIT: User: maria_garcia, Amount: 200.0, New Balance: 700.0
+[2025-08-17 22:36:49] TRANSFER: TX: TX-8412e994cc508d0e, From: juan_perez, To: maria_garcia, Amount: 200.0
+[2025-08-17 22:36:49] GENERATE_CODE: Creator: system, Code: ARK-149619311e, Value: 150.0
+[2025-08-17 22:36:49] DEPOSIT: User: maria_garcia, Amount: 150.0, New Balance: 850.0
+[2025-08-17 22:36:49] REDEEM_CODE: User: maria_garcia, Code: ARK-149619311e, Value: 150.0

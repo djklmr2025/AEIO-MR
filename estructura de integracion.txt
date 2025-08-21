@@ -1,0 +1,12 @@
+C:\arkaios\miapp\dist\ArkaiosApp-win32-x64
+├── KEY & LOGIN PASS & PIN
+├── locales
+├── resources
+│   ├── app.asar (o tus archivos principales)
+│   ├── arkaios_finance_core.py   <-- Aquí va nuestro módulo
+│   ├── financial_db              <-- Nueva carpeta para DB
+│   │   ├── arkaios_finance.db
+│   │   └── arkaios_transactions.log
+│   └── qr_codes                  <-- Carpeta para códigos QR
+├── ArkaiosApp.exe
+└── otros archivos...

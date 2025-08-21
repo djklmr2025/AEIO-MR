@@ -1,0 +1,18 @@
+códigos de cifrado y decifrado: correr comandos desde power shell
+
+cifrado:
+$token = "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"
+$key = "ArkaiosResurrection2025"
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($token)
+$iv = 1..16 | ForEach-Object { Get-Random -Maximum 256 }
+$aes = [System.Security.Cryptography.Aes]::Create()
+$aes.Key = [System.Text.Encoding]::UTF8.GetBytes($key.PadRight(32,'0')[0..31])
+$aes.IV = $iv
+$encryptor = $aes.CreateEncryptor()
+$encrypted = $encryptor.TransformFinalBlock($bytes, 0, $bytes.Length)
+$result = $iv + $encrypted
+[System.Convert]::ToBase64String($result)
+
+
+desifrado:
+echo "SfKEjGoTc+pkOTJ8XOWxwaRZF/bBHWddVtyLy6yaSHyMnFY9eNJX6lC152YRRSasXaJgZSAgnqZ7HA7PqLvtBTMDG5VYdKpyG52Oa0Q1wOyQ5+gFy8gix2FQ2cc1D2qy9VMnwLbI3uKN0OPzOf/tTA" | openssl aes-256-cbc -salt -a -d -k "ArkaiosResurrection2025"

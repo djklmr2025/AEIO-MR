@@ -1,0 +1,38 @@
+name: Sync Files from Google Drive
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Ejecutar cada hora
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install gdown
+        run: pip install gdown
+
+      - name: Download files from Google Drive
+        run: |
+          # DESCARGAR ARCHIVOS ESPECÍFICOS (reemplaza con tus IDs reales)
+          # Formato: gdown --id [ID_ARCHIVO] -O [NOMBRE_ARCHIVO]
+          
+          # Ejemplo (reemplaza estos IDs con los tuyos):
+          gdown --id 1Aby8odfV5ilLI9ikNmBBh7tUdVxrIGtn?usp -O carpeta
+          # Añade más líneas para cada archivo que necesites
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "djkannliteremix@gmail.com"
+          git config --global user.name "djklmr"
+          git add .
+          git diff --staged --quiet || git commit -m "Sincronización automática desde Google Drive - $(date)"
+          git push origin main

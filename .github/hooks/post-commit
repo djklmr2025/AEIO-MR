@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Carpeta local que quieres sincronizar
+SOURCE_DIR="/path/to/your/local/folder"
+
+# Carpeta dentro del repositorio donde quieres copiar los archivos
+DEST_DIR="your/repo/subfolder"
+
+# Copia los archivos
+cp -r "$SOURCE_DIR"/* "$DEST_DIR"
+
+# Añade los cambios al staging area
+git add "$DEST_DIR"
+
+# Crea un commit con los cambios
+git commit -m "Sincronización automática de la carpeta $SOURCE_DIR"
