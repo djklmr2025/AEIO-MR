@@ -1,6 +1,22 @@
 {  
   "version": 2,  
+  "builds": [  
+    {  
+      "src": "server_gemini.py",  
+      "use": "@vercel/python",  
+      "config": { "maxLambdaSize": "15mb" }  
+    }  
+  ],  
   "routes": [  
-    { "src": "/", "dest": "/index.html" }  
-  ]  
+    {  
+      "src": "/(.*)",  
+      "dest": "server_gemini.py"  
+    }  
+  ],  
+  "images": {  
+    "domains": [  
+      "aeio-mr.vercel.app",  
+      "arkaios-projects.vercel.app"  
+    ]  
+  }  
 }  
