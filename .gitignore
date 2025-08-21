@@ -1,1 +1,6 @@
+# Vercel
 .vercel
+vercel.json
+
+# Dependencies
+node_modules
