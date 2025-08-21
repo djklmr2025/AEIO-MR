@@ -1,13 +1,16 @@
-// next.config.js
+# Elimina vercel.json
+rm vercel.json
+
+# Crea next.config.js
+cat > next.config.js << EOF
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true
-  },
-  // Para evitar errores de rutas
-  skipTrailingSlashRedirect: true
+  }
 }
 
 module.exports = nextConfig
+EOF

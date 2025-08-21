@@ -1,4 +1,4 @@
-// vercel.json (si usas Create React App)
+cat > vercel.json << EOF
 {
   "version": 2,
   "builds": [
@@ -14,3 +14,4 @@
     }
   ]
 }
+EOF
