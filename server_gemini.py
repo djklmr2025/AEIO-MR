@@ -8,7 +8,7 @@ from typing import List
 # ================== CONFIG ==================
 load_dotenv()
 
-API_KEY = os.getenv("GEMINI_API_KEY", "")
+API_KEY = os.getenv("AIzaSyAeKx85uKbDDbXweByn9Y31ImZKiQbrZoQ", "")
 MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
 BASE    = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}"
 
@@ -96,7 +96,7 @@ def handle_preflight():
 # ================== ARCHIVOS ESTÁTICOS ==================
 @app.route('/')
 def index():
-    html_files = ['magic_gemini.html', 'index.html']
+    html_files = ['index.html', 'magic_gemini.html'', '']
     
     # Buscar el archivo HTML en el directorio actual
     for html_file in html_files:
