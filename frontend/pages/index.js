@@ -16,8 +16,9 @@ export default function ArkaiosUI() {
   const fileInputRef = useRef(null);
 
   // ==== CONSTANTES ====
-  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
-  const CONVO_KEY = 'arkaios_gemini_convo';
+const API_BASE = process.env.NODE_ENV === 'production' 
+  ? 'https://aeio-mr.onrender.com' 
+  : 'http://127.0.0.1:8000';
 
   // ==== EFECTOS INICIALES ====
   useEffect(() => {

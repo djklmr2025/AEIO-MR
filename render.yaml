@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: arkaios-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server_gemini:app
+    envVars:
+      - key: GEMINI_API_KEY
+        value: tu_clave_gemini_aqui
+      - key: PORT
+        value: 8000

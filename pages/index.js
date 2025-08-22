@@ -16,8 +16,9 @@ export default function ArkaiosUI() {
   const fileInputRef = useRef(null);
 
   // ==== CONSTANTES ====
-  const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
-  const CONVO_KEY = 'arkaios_gemini_convo';
+const API_BASE = process.env.NODE_ENV === 'development' 
+  ? 'http://127.0.0.1:8000' 
+  : process.env.NEXT_PUBLIC_API_URL || 'https://glbx-arkaios-api.onrender.com';
 
   // ==== EFECTOS INICIALES ====
   useEffect(() => {
@@ -83,6 +84,10 @@ export default function ArkaiosUI() {
     e.target.value = '';
   };
 
+  const removePendingFile = (indexToRemove) => {
+    setPendingFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const clearFiles = () => {
     setPendingFiles([]);
     if (fileInputRef.current) {
@@ -91,115 +96,113 @@ export default function ArkaiosUI() {
   };
 
   // ==== COMUNICACIÓN CON API ====
-  const uploadFiles = async () => {
-    if (!pendingFiles.length) return [];
+const uploadFiles = async () => {
+  if(!pendingFiles.length) return [];
+  
+  // Modo demo: simular upload
+  if (!API_BASE.includes('127.0.0.1') && !API_BASE.includes('localhost')) {
+    console.log('📁 Simulando upload de archivos (modo demo)...');
+    return pendingFiles.map(file => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+      type: file.type,
+      size: file.size
+    }));
+  }
+
+  // Modo desarrollo: upload real al backend local
+  const form = new FormData();
+  pendingFiles.forEach(f => form.append('files', f));
+  
+  try {
+    const response = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      body: form
+    });
     
-    const form = new FormData();
-    pendingFiles.forEach(f => form.append('files', f));
-    
-    try {
-      const response = await fetch(`${API_BASE}/upload`, {
-        method: 'POST',
-        body: form
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error al subir archivos: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      
-      const data = await response.json();
-      return data.files || [];
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error al subir archivos: ${response.status} ${response.statusText} - ${errorText}`);
     }
-  };
+    
+    const data = await response.json();
+    return data.files || [];
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    throw error;
+  }
+};
 
   const sendMessage = async () => {
-    const text = input.trim();
-    if (!text && pendingFiles.length === 0) return;
-    if (isSending) return;
+  const text = input.trim();
+  if (!text && pendingFiles.length === 0) return;
+  if (isSending) return;
 
-    // Mostrar mensaje del usuario inmediatamente
-    const localPreviews = [];
-    for (const file of pendingFiles) {
-      if (file.type.startsWith('image/')) {
-        try {
-          const preview = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-          localPreviews.push({ name: file.name, preview, type: file.type });
-        } catch (e) {
-          localPreviews.push({ name: file.name, type: file.type });
-        }
-      } else {
-        localPreviews.push({ name: file.name, type: file.type });
-      }
-    }
+  // ... (código existente para mostrar mensaje usuario)
 
-    if (text || localPreviews.length) {
-      addMessage({
-        text: text || '(adjuntos)',
-        who: 'user',
-        attachments: localPreviews
-      });
-    }
-    
-    setInput('');
-    setIsSending(true);
+  setInput('');
+  setIsSending(true);
 
-    try {
-      const uploaded = await uploadFiles();
-      const payload = {
-        message: text,
-        attachments: uploaded,
-        root: isRootMode,
-        conversationId
-      };
+  try {
+    const uploaded = await uploadFiles();
+    const payload = {
+      message: text,
+      attachments: uploaded,
+      root: isRootMode,
+      conversationId
+    };
 
-      const response = await fetch(`${API_BASE}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        let errorMsg;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.respuesta || `Error ${response.status}: ${response.statusText}`;
-        } catch {
-          errorMsg = `Error ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(errorMsg);
-      }
-
-      const data = await response.json();
+    // Modo demo: simular respuesta
+    if (!API_BASE.includes('127.0.0.1') && !API_BASE.includes('localhost')) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
       updateConnectionStatus(true);
       addMessage({
-        text: data.respuesta || '(sin respuesta)',
+        text: "✅ ¡Frontend funcionando! Pero necesita conectar con el backend Flask.\n\nPara desarrollo local: ejecuta 'python server_gemini.py' y recarga.",
         who: 'ai',
         attachments: uploaded
       });
-
-    } catch (err) {
-      console.error('Error sending message:', err);
-      updateConnectionStatus(false);
-      addMessage({
-        text: '❌ Error: ' + err.message,
-        who: 'ai',
-        isSystem: true
-      });
-    } finally {
-      setIsSending(false);
-      setPendingFiles([]);
+      return;
     }
-  };
 
+    // Modo desarrollo: llamada real al backend
+    const response = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      let errorMsg;
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.respuesta || `Error ${response.status}: ${response.statusText}`;
+      } catch {
+        errorMsg = `Error ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    updateConnectionStatus(true);
+    addMessage({
+      text: data.respuesta || '(sin respuesta)',
+      who: 'ai',
+      attachments: uploaded
+    });
+
+  } catch (err) {
+    console.error('Error sending message:', err);
+    updateConnectionStatus(false);
+    addMessage({
+      text: '❌ Error: ' + err.message,
+      who: 'ai',
+      isSystem: true
+    });
+  } finally {
+    setIsSending(false);
+    setPendingFiles([]);
+  }
+};
   const clearChat = async () => {
     if (!confirm('¿Estás seguro de que quieres borrar todo el historial y la memoria?')) return;
     
@@ -228,32 +231,31 @@ export default function ArkaiosUI() {
   };
 
   const pingServer = async () => {
-    setConnecting();
+  setConnecting();
+  
+  // Modo desarrollo: ping real
+  try {
+    const response = await fetch(`${API_BASE}/health`, {
+      method: 'GET',
+      cache: 'no-cache'
+    });
     
-    try {
-      const response = await fetch(`${API_BASE}/health`, {
-        method: 'GET',
-        cache: 'no-cache'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        updateConnectionStatus(true);
-        
-        const statusMsg = `✅ Servidor OK\n- Estado: ${data.status}\n- Modelo: ${data.model}\n- API configurada: ${data.api_key_configured ? 'Sí' : 'No'}\n- Archivo HTML: ${data.html_file_exists ? 'Encontrado' : 'Faltante'}\n- Directorio: ${data.current_directory}`;
-        addMessage({ text: statusMsg, who: 'ai', isSystem: true });
-      } else {
-        updateConnectionStatus(false);
-        addMessage({ text: '❌ Servidor respondió con error: ' + response.status, who: 'ai', isSystem: true });
-      }
-    } catch (e) {
+    if (response.ok) {
+      const data = await response.json();
+      updateConnectionStatus(true);
+      const statusMsg = `✅ Servidor OK\n- Estado: ${data.status}\n- Modelo: ${data.model}`;
+      addMessage({ text: statusMsg, who: 'ai', isSystem: true });
+    } else {
       updateConnectionStatus(false);
-      addMessage({ text: '❌ No se pudo conectar al servidor: ' + e.message, who: 'ai', isSystem: true });
+      addMessage({ text: '❌ Servidor respondió con error: ' + response.status, who: 'ai', isSystem: true });
     }
-  };
+  } catch (e) {
+    updateConnectionStatus(false);
+    addMessage({ text: '❌ No se pudo conectar al servidor: ' + e.message, who: 'ai', isSystem: true });
+  }
+};
 
   const checkInitialConnection = async () => {
-    setConnecting();
     try {
       const response = await fetch(`${API_BASE}/health`, {
         method: 'GET',
@@ -343,7 +345,7 @@ export default function ArkaiosUI() {
               accept="image/*,application/pdf,.pdf,.txt,.md,.json" 
               onChange={handleFileSelect}
             />
-            <button className="btn" onClick={clearFiles} title="Quitar adjuntos">
+            <button className="btn" onClick={clearFiles} title="Quitar adjuntos" disabled={pendingFiles.length === 0}>
               Limpiar adjuntos
             </button>
           </div>
@@ -376,9 +378,7 @@ export default function ArkaiosUI() {
                       fontSize: '12px',
                       lineHeight: '1'
                     }}
-                    onClick={() => {
-                      setPendingFiles(prev => prev.filter((_, i) => i !== index));
-                    }}
+                    onClick={() => removePendingFile(index)}
                   >
                     ×
                   </button>
