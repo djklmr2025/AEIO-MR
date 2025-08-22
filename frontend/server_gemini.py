@@ -110,7 +110,8 @@ def handle_preflight():
 # ================== ARCHIVOS ESTÁTICOS ==================
 @app.route('/')
 def index():
-    html_files = ['index.html', 'magic_gemini.html'', '']
+    # ← Aquí debe empezar la indentación (4 espacios)
+    html_files = ['index.html', 'magic_gemini.html', '']
     
     # Buscar el archivo HTML en el directorio actual
     for html_file in html_files:
