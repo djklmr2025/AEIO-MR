@@ -6,15 +6,8 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/index.html',
-        permanent: false,
-      },
-    ]
-  }
+  // Para evitar errores 404 en SPA
+  skipTrailingSlashRedirect: true
 }
 
 module.exports = nextConfig

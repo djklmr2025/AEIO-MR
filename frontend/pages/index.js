@@ -83,6 +83,10 @@ export default function ArkaiosUI() {
     e.target.value = '';
   };
 
+  const removePendingFile = (indexToRemove) => {
+    setPendingFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const clearFiles = () => {
     setPendingFiles([]);
     if (fileInputRef.current) {
@@ -253,7 +257,6 @@ export default function ArkaiosUI() {
   };
 
   const checkInitialConnection = async () => {
-    setConnecting();
     try {
       const response = await fetch(`${API_BASE}/health`, {
         method: 'GET',
@@ -343,7 +346,7 @@ export default function ArkaiosUI() {
               accept="image/*,application/pdf,.pdf,.txt,.md,.json" 
               onChange={handleFileSelect}
             />
-            <button className="btn" onClick={clearFiles} title="Quitar adjuntos">
+            <button className="btn" onClick={clearFiles} title="Quitar adjuntos" disabled={pendingFiles.length === 0}>
               Limpiar adjuntos
             </button>
           </div>
@@ -376,9 +379,7 @@ export default function ArkaiosUI() {
                       fontSize: '12px',
                       lineHeight: '1'
                     }}
-                    onClick={() => {
-                      setPendingFiles(prev => prev.filter((_, i) => i !== index));
-                    }}
+                    onClick={() => removePendingFile(index)}
                   >
                     ×
                   </button>
