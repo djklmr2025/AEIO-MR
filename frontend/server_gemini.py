@@ -92,7 +92,17 @@ def http_json(url: str, payload: dict, timeout=60):
 # ================== CORS BÁSICO ==================
 @app.after_request
 def add_cors(resp):
-    resp.headers['Access-Control-Allow-Origin'] = '*'
+    # Permite tu dominio de Vercel/Netlify
+    allowed_origins = [
+        "http://localhost:3000",
+        "https://tu-app.vercel.app",
+        "https://tu-app.netlify.app"
+    ]
+    
+    origin = request.headers.get('Origin')
+    if origin in allowed_origins:
+        resp.headers['Access-Control-Allow-Origin'] = origin
+    
     resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     resp.headers['Cache-Control'] = 'no-store'
