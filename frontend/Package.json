@@ -1,15 +1,22 @@
+# Crea package.json en la raíz que apunte al frontend
+cat > package.json << 'EOF'
 {
   "name": "aeio-mr",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint",
+    "install-frontend": "cd frontend && npm install"
   },
   "dependencies": {
     "next": "^14.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
+EOF
