@@ -16,9 +16,21 @@ export default function ArkaiosUI() {
   const fileInputRef = useRef(null);
 
   // ==== CONSTANTES ====
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://aeio-mr.onrender.com' 
-  : 'http://127.0.0.1:8000';
+  // Clave para localStorage
+  const CONVO_KEY = 'arkaios_claude_conversation_id';
+
+  // URL del API - Configuración más robusta
+  const getApiBase = () => {
+    // En desarrollo
+    if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
+      return process.env.NEXT_PUBLIC_API_BASE_DEV || 'http://127.0.0.1:8000';
+    }
+    
+    // En producción
+    return process.env.NEXT_PUBLIC_API_BASE_PROD || 'https://tu-backend-url.onrender.com';
+  };
+
+  const API_BASE = getApiBase();
 
   // ==== EFECTOS INICIALES ====
   useEffect(() => {
@@ -32,7 +44,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
     
     // Mensaje inicial
     addMessage({
-      text: '¡Hola! Soy Arkaios (Gemini). Puedes adjuntar imágenes o PDFs para que los tenga en cuenta. Activa «Modo ROOT» si necesitas una acción administrativa.',
+      text: '¡Hola! Soy Arkaios, powered by Claude. Puedes adjuntar imágenes o PDFs para que los tenga en cuenta. Activa «Modo ROOT» si necesitas una acción administrativa.',
       who: 'ai'
     });
 
@@ -227,7 +239,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
     
     // Mensaje inicial después de limpiar
     addMessage({
-      text: '¡Hola! Soy Arkaios (Gemini). Puedes adjuntar imágenes o PDFs para que los tenga en cuenta. Activa «Modo ROOT» si necesitas una acción administrativa.',
+      text: '¡Hola! Soy Arkaios, powered by Claude. Puedes adjuntar imágenes o PDFs para que los tenga en cuenta. Activa «Modo ROOT» si necesitas una acción administrativa.',
       who: 'ai'
     });
   };
@@ -281,7 +293,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
   return (
     <>
       <Head>
-        <title>Arkaios UI — Gemini</title>
+        <title>Arkaios UI — Claude</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="https://img.icons8.com/fluency/48/robot-2.png" />
       </Head>
@@ -289,7 +301,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
       <div className="wrap">
         <header>
           <h1>ARKAIOS UI</h1>
-          <span className="badge">Proveedor: Gemini</span>
+          <span className="badge">Proveedor: Claude</span>
           <span className={`status ${isConnected ? 'online' : 'offline'}`}>
             {isConnected ? 'Conectado' : 'Desconectado'}
           </span>
@@ -311,7 +323,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
               className={`msg ${msg.who} ${msg.isSystem ? 'system' : ''} ${msg.who === 'ai' && isRootMode ? 'root' : ''}`}
             >
               <div className="head">
-                {msg.isSystem ? 'Sistema' : msg.who === 'user' ? 'Tú' : (isRootMode ? 'Arkaios (ROOT/Gemini)' : 'Arkaios (Gemini)')}
+                {msg.isSystem ? 'Sistema' : msg.who === 'user' ? 'Tú' : (isRootMode ? 'Arkaios (ROOT/Claude)' : 'Arkaios (Claude)')}
               </div>
               <div className="content">{msg.text}</div>
               
@@ -421,14 +433,14 @@ const API_BASE = process.env.NODE_ENV === 'production'
 
       <style jsx>{`
         :root {
-          --bg: #091017;
-          --surface: #0d1a28;
-          --ink: #e6f1ff;
-          --muted: #9fb4d3;
-          --brand: #00e1a3;
-          --accent: #4ea2ff;
-          --danger: #ff5b8a;
-          --line: #14314f;
+          --bg: #0f0f23;
+          --surface: #1a1a3e;
+          --ink: #ccccf0;
+          --muted: #8585b3;
+          --brand: #ff9500;
+          --accent: #6366f1;
+          --danger: #ef4444;
+          --line: #2d2d5a;
         }
         
         * {
@@ -463,15 +475,16 @@ const API_BASE = process.env.NODE_ENV === 'production'
         header h1 {
           font-size: 20px;
           margin: 0;
+          color: var(--brand);
         }
         
         .badge {
           font-size: 12px;
           padding: 4px 8px;
           border-radius: 999px;
-          background: #0e253e;
-          border: 1px solid var(--line);
-          color: #bfe2ff;
+          background: #2d1810;
+          border: 1px solid #5a3020;
+          color: #ffaa66;
         }
         
         .status {
@@ -482,21 +495,21 @@ const API_BASE = process.env.NODE_ENV === 'production'
         }
         
         .status.online {
-          background: #004225;
-          color: #00e1a3;
-          border: 1px solid #006b3d;
+          background: #15803d;
+          color: #22c55e;
+          border: 1px solid #16a34a;
         }
         
         .status.offline {
-          background: #3d1a1a;
-          color: #ff5b8a;
-          border: 1px solid #5c2929;
+          background: #7f1d1d;
+          color: #ef4444;
+          border: 1px solid #dc2626;
         }
         
         .status.connecting {
-          background: #3d3d1a;
-          color: #e1e100;
-          border: 1px solid #5c5c29;
+          background: #a16207;
+          color: #f59e0b;
+          border: 1px solid #d97706;
         }
         
         #history {
@@ -505,7 +518,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
           border: 1px solid var(--line);
           border-radius: 12px;
           padding: 14px;
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(255, 255, 255, 0.02);
           margin-bottom: 12px;
         }
         
@@ -518,25 +531,25 @@ const API_BASE = process.env.NODE_ENV === 'production'
         }
         
         .msg.user {
-          background: rgba(0, 225, 163, 0.14);
-          border: 1px solid rgba(0, 225, 163, 0.35);
+          background: rgba(255, 149, 0, 0.15);
+          border: 1px solid rgba(255, 149, 0, 0.4);
           margin-left: 15%;
         }
         
         .msg.ai {
-          background: rgba(78, 162, 255, 0.12);
-          border: 1px solid rgba(78, 162, 255, 0.35);
+          background: rgba(99, 102, 241, 0.15);
+          border: 1px solid rgba(99, 102, 241, 0.4);
           margin-right: 15%;
         }
         
         .msg.root {
-          background: rgba(255, 91, 138, 0.12);
-          border: 1px solid rgba(255, 91, 138, 0.35);
+          background: rgba(239, 68, 68, 0.15);
+          border: 1px solid rgba(239, 68, 68, 0.4);
         }
         
         .msg.system {
-          background: rgba(255, 193, 7, 0.1);
-          border: 1px solid rgba(255, 193, 7, 0.3);
+          background: rgba(245, 158, 11, 0.1);
+          border: 1px solid rgba(245, 158, 11, 0.3);
           text-align: center;
         }
         
@@ -624,7 +637,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
         
         .btn:hover {
           border-color: var(--brand);
-          background: rgba(0, 225, 163, 0.1);
+          background: rgba(255, 149, 0, 0.1);
         }
         
         .btn:disabled {
@@ -634,27 +647,27 @@ const API_BASE = process.env.NODE_ENV === 'production'
         
         .btn.primary {
           background: var(--brand);
-          color: #001b12;
+          color: #1a0f00;
           border: none;
           font-weight: 600;
         }
         
         .btn.primary:hover {
-          background: #00c491;
+          background: #e6850e;
         }
         
         .btn.primary:disabled {
-          background: #006b51;
-          color: #4a9d7a;
+          background: #995200;
+          color: #cc7700;
         }
         
         .btn.warning {
-          border-color: #ff9db8;
-          color: #ffd0dd;
+          border-color: #fbbf24;
+          color: #fef3c7;
         }
         
         .btn.warning:hover {
-          background: rgba(255, 91, 138, 0.1);
+          background: rgba(245, 158, 11, 0.1);
         }
         
         .filebar {
@@ -680,10 +693,10 @@ const API_BASE = process.env.NODE_ENV === 'production'
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: #15283f;
+          background: #2a1f3d;
           border: 1px solid var(--line);
           padding: 6px 10px;
-          borderRadius: 999px;
+          border-radius: 999px;
         }
         
         .switch input {
