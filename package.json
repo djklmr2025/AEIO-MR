@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "build": "tu-comando-de-build && mv frontend public",
+    "vercel-build": "npm run build"
+  }
+}
