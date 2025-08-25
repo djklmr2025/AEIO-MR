@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: aeio-mr-backend
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn server_gemini:app
-    envVars:
-      - key: GEMINI_API_KEY
-        value: your_actual_api_key_here

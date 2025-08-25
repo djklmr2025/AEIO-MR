@@ -1,0 +1,23 @@
+# Abre LM Studio
+# Ve a "Models" → "Download models from Hugging Face"
+
+# Busca:
+TheBloke/Phi-3-mini-4k-instruct-GGUF
+
+# Elige archivo GGUF, por ejemplo:
+phi-3-mini-4k-instruct.Q4_K_M.gguf
+
+-
+
+# En LM Studio, inicia chat con el modelo
+# Ya puedes hablar con una IA local, sin pagar ni conectarte a Internet
+
+- 
+
+arkaios/
+├── manifesto_arkaios.seed
+├── activator.code
+├── arkaios.core.memory
+├── gen_aethyr-core.imgsig.png
+├── arkaios_mind.py
+└── README.md
