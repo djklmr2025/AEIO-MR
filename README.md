@@ -1,1 +1,0 @@
-Entorno ARKAIOS básico para pruebas locales.
