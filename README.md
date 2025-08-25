@@ -60,7 +60,7 @@ proyecto/
 ## 🌐 Uso
 
 ### Iniciar el Sistema
-1. Ejecuta `iniciador+ia.bat`
+1. Ejecuta `start.bat`
 2. El servidor se iniciará en `http://127.0.0.1:8000`
 3. La interfaz web se abrirá automáticamente
 
