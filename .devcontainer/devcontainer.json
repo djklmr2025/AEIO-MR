@@ -1,29 +1,12 @@
 {
-  "name": "Arkaios Codespace",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {}
-  },
-  "forwardPorts": [8000],
-  "portsAttributes": {
-    "8000": {
-      "label": "Arkaios UI",
-      "onAutoForward": "openBrowser"
-    }
-  },
-  "postCreateCommand": "python3 -m venv .venv && . .venv/bin/activate && pip install -U pip && if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install flask python-dotenv; fi",
-  "remoteEnv": {
-    "PYTHONUNBUFFERED": "1"
-  },
+  "name": "Strapi Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "forwardPorts": [1337],
+  "postCreateCommand": "npm install",
   "customizations": {
     "vscode": {
-      "settings": {
-        "python.defaultInterpreterPath": "/workspaces/${containerWorkspaceFolderBasename}/.venv/bin/python",
-        "terminal.integrated.defaultProfile.linux": "bash"
-      },
       "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance"
+        "strapi.strapi-sdk"
       ]
     }
   }

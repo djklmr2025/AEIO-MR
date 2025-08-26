@@ -168,9 +168,12 @@ def preflight_or_auth():
 # ================== INDEX / DIAGNÓSTICO ==================
 @app.route('/')
 def index():
-    for f in ['index.html', 'magic_gemini.html']:
-        if os.path.isfile(f): return send_from_directory('.', f)
-    return render_template_string("<h2>Arkaios: coloca index.html junto a este servidor.</h2>")
+    # Buscar magic.html primero, luego index.html como respaldo
+    if os.path.isfile('magic.html'):
+        return send_from_directory('.', 'magic.html')
+    elif os.path.isfile('index.html'):
+        return send_from_directory('.', 'index.html')
+    return render_template_string("<h2>Arkaios: coloca magic.html o index.html junto a este servidor.</h2>")
 
 # ================== ESTÁTICOS / UPLOADS ==================
 @app.route('/uploads/<path:fname>')
@@ -338,7 +341,7 @@ def memory():
 
 @app.route("/health", methods=['GET'])
 def health():
-    html_exists = os.path.isfile('magic_gemini.html') or os.path.isfile('index.html')
+    html_exists = os.path.isfile('magic.html') or os.path.isfile('index.html')
     return jsonify({
         "status": "OK",
         "timestamp": now_ts(),
@@ -363,6 +366,7 @@ if __name__ == '__main__':
     print("🔐 Auth token:", "ON" if SERVER_AUTH_TOKEN else "OFF")
     print("🔓 ROOT_ALLOW_EXTERNAL:", int(ROOT_ALLOW_EXTERNAL))
     print("🔥 ROOT_FORCE_ON:", int(ROOT_FORCE_ON))
+    print("📁 Sirviendo: magic.html (o index.html como respaldo)")
     print("🌐 http://127.0.0.1:8000")
     print("=" * 60)
     app.run(host='127.0.0.1', port=8000, debug=False, threaded=True)
