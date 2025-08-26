@@ -39,7 +39,7 @@ MEMORY_SUMMARY_EVERY=6
 ```
 
 ### Variables de Configuración
-- `GEMINI_API_KEY`: Tu clave de API de Gemini (OBLIGATORIO)
+- `GEMINI_API_KEY`: No nesesitas configurar API alguna (Ya la incluye)
 - `GEMINI_MODEL`: Modelo a usar (por defecto: gemini-2.0-flash-exp)
 - `MEMORY_DIR`: Directorio para almacenar la memoria
 - `MEMORY_MAX_TURNS`: Número de turnos recientes en contexto
@@ -60,7 +60,7 @@ proyecto/
 ## 🌐 Uso
 
 ### Iniciar el Sistema
-1. Ejecuta `start.bat`
+1. Ejecuta `launch_arkaios.bat`
 2. El servidor se iniciará en `http://127.0.0.1:8000`
 3. La interfaz web se abrirá automáticamente
 
