@@ -4,7 +4,6 @@ import os, json, base64, time, urllib.request, urllib.error, re, urllib.parse
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import List, Tuple
-import time
 
 # ================== CONFIG ==================
 load_dotenv()
@@ -31,17 +30,6 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(MEM_DIR, exist_ok=True)
-
-# Tamaño máximo de subida (20 MB)
-app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
-
-# Subcarpetas para organización:
-GEN_DIR = os.path.join(UPLOAD_FOLDER, "generated")
-USR_DIR = os.path.join(UPLOAD_FOLDER, "user")
-THREED_DIR = os.path.join(UPLOAD_FOLDER, "three_d")
-for _d in (GEN_DIR, USR_DIR, THREED_DIR):
-    os.makedirs(_d, exist_ok=True)
-
 
 # ================== UTILES ==================
 def now_ts():
@@ -370,43 +358,6 @@ def health():
         "google_cse_configured": bool(GOOGLE_CSE_ID and GOOGLE_CSE_KEY),
     })
 
-
-
-@app.route('/uploads/<path:filename>')
-def serve_upload(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
-
-
-
-
-# -------- Utilidad: verificación básica de imagen ----------
-def verify_file_is_image(path: str, min_bytes: int = 16) -> tuple[bool, str]:
-    try:
-        if (not os.path.exists(path)) or (os.path.getsize(path) < min_bytes):
-            return False, "archivo no existe o está vacío"
-        from PIL import Image as _PIL_Image
-        with _PIL_Image.open(path) as im:
-            im.verify()
-        return True, ""
-    except Exception as e:
-        return False, str(e)
-
-
-
-
-# -------- Limpieza automática (TTL en horas) ----------
-def cleanup_uploads(ttl_hours=24):
-    cutoff = time.time() - ttl_hours*3600
-    for root in (GEN_DIR, THREED_DIR, USR_DIR):
-        try:
-            for n in os.listdir(root):
-                p = os.path.join(root, n)
-                if os.path.isfile(p) and os.path.getmtime(p) < cutoff:
-                    os.remove(p)
-        except Exception:
-            pass
-
-
 if __name__ == '__main__':
     print("=" * 60)
     print("🚀 ARKAIOS GEMINI SERVER - MERGED (ROOT+SEARCH)")
@@ -419,18 +370,3 @@ if __name__ == '__main__':
     print("🌐 http://127.0.0.1:8000")
     print("=" * 60)
     app.run(host='127.0.0.1', port=8000, debug=False, threaded=True)
-
-@app.route('/ping', methods=['GET'])
-def ping():
-    return jsonify({"ok": True, "time": time.time()})
-
-
-@app.after_request
-def add_cors_headers(resp):
-    try:
-        resp.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin','*')
-        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    except Exception:
-        pass
-    return resp

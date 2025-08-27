@@ -50,13 +50,6 @@
   </style>
 </head>
 <body>
-  <div id="feature-toggles" class="toggle-row">
-    <label><input type="checkbox" id="toggle-image" checked> Imagen (HF)</label>
-    <label><input type="checkbox" id="toggle-3d"> 3D (Hunyuan)</label>
-    <label><input type="checkbox" id="toggle-web"> Búsqueda Web</label>
-    <label><input type="checkbox" id="toggle-memory" checked> Memoria</label>
-  </div>
-
   <div class="wrap">
     <header>
       <h1>ARKAIOS UI</h1>
@@ -203,9 +196,7 @@
     // ====== ARCHIVOS DESDE INPUT ======
     fileInput.addEventListener('change', e=>{
       const add = Array.from(e.target.files).filter(f=>f.size<=10*1024*1024);
-      if(add.length!==e.target.files.length) const genImgs=(data.generatedImages||[]).map(url=>({name:url.split('/').pop(),url,type:'image/png'}));
-    const allAtt=[...(uploaded||[]),...genImgs];
-    addMessage({ text:data.respuesta||'(sin respuesta)', who:'ai', attachments: allAtt });
+      if(add.length!==e.target.files.length) addMessage({text:'Algunos archivos >10MB se omitieron', who:'ai', isSystem:true});
       pendingFiles=[...pendingFiles,...add]; renderPreviews(); e.target.value='';
     });
     clearBtn.addEventListener('click',()=>{ pendingFiles=[]; renderPreviews(); fileInput.value=''; });
@@ -287,7 +278,7 @@
       if(!confirm('¿Borrar historial y memoria de esta conversación?')) return;
       try{
         const headers = {'Content-Type':'application/json'}; if (AUTH) headers['Authorization']='Bearer '+AUTH;
-        await fetch(`${API_BASE}/clear`, {method:'POST', headers, body: JSON.stringify({conversationId, features: readFeatureFlags() })});
+        await fetch(`${API_BASE}/clear`, {method:'POST', headers, body:JSON.stringify({conversationId})});
       }catch{}
       historyDiv.innerHTML=''; addMessage({text:'Memoria e historial borrados.', who:'ai', isSystem:true});
     });
@@ -309,12 +300,6 @@
       addMessage({text:'¡Hola! Soy Arkaios (ROOT/Gemini). Puedes pegar capturas con Ctrl+V y usar: "buscar en google: …".', who:'ai'});
     }
     window.addEventListener('load', init);
-  
-  function readFeatureFlags(){return{image:document.getElementById('toggle-image')?.checked??true,threeD:document.getElementById('toggle-3d')?.checked??false,web:document.getElementById('toggle-web')?.checked??false,memory:document.getElementById('toggle-memory')?.checked??true};}
-  function loadFeatureFlags(){try{const f=JSON.parse(localStorage.getItem('arkaios:flags')||'{}');if('image'in f)document.getElementById('toggle-image').checked=!!f.image;if('threeD'in f)document.getElementById('toggle-3d').checked=!!f.threeD;if('web'in f)document.getElementById('toggle-web').checked=!!f.web;if('memory'in f)document.getElementById('toggle-memory').checked=!!f.memory;}catch{}}
-  function saveFeatureFlags(){localStorage.setItem('arkaios:flags',JSON.stringify(readFeatureFlags()));}
-  document.addEventListener('DOMContentLoaded',loadFeatureFlags);
-  ['toggle-image','toggle-3d','toggle-web','toggle-memory'].forEach(id=>{document.addEventListener('change',e=>{if(e.target&&e.target.id===id)saveFeatureFlags();});});
-</script>
+  </script>
 </body>
 </html>
