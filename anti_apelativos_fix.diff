@@ -1,0 +1,19 @@
+diff --git a/server_gemini_merged_root.py b/server_gemini_merged_root.py
+index e69de29..abcd123 100644
+--- a/server_gemini_merged_root.py
++++ b/server_gemini_merged_root.py
+@@ def chat():
+-        _log_turn(convo_id, text, txt, files)
+-        _maybe_summarize(convo_id)
+-        return jsonify({"respuesta": txt, "conversationId": convo_id})
++        _log_turn(convo_id, text, txt, files)
++        _maybe_summarize(convo_id)
++
++        # --- Filtro anti-apelativos (opcional) ---
++        try:
++            for bad in ('cariño','mi amor','bebé'):
++                txt = re.sub(rf"\b{bad}\b", "", txt, flags=re.IGNORECASE)
++        except Exception:
++            pass
++
++        return jsonify({"respuesta": txt, "conversationId": convo_id})

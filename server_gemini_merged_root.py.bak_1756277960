@@ -4,7 +4,6 @@ import os, json, base64, time, urllib.request, urllib.error, re, urllib.parse
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import List, Tuple
-import time
 
 # ================== CONFIG ==================
 load_dotenv()
@@ -419,18 +418,3 @@ if __name__ == '__main__':
     print("🌐 http://127.0.0.1:8000")
     print("=" * 60)
     app.run(host='127.0.0.1', port=8000, debug=False, threaded=True)
-
-@app.route('/ping', methods=['GET'])
-def ping():
-    return jsonify({"ok": True, "time": time.time()})
-
-
-@app.after_request
-def add_cors_headers(resp):
-    try:
-        resp.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin','*')
-        resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    except Exception:
-        pass
-    return resp
