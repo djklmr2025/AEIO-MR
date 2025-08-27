@@ -1,5 +1,8 @@
 # ARKAIOS - Integración con Gemini IA
 
+Descarga app Android desde aqui:
+https://bit.ly/4mLPSsI
+
 ## 📋 Descripción
 
 Sistema completo para integrar con la IA de Google Gemini, incluyendo interfaz web moderna, servidor backend con memoria persistente y launcher automático.
