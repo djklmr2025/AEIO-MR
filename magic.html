@@ -10,7 +10,7 @@
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--ink)}
     .wrap{max-width:1100px;margin:0 auto;padding:16px;display:flex;flex-direction:column;height:100%}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
     header h1{font-size:20px;margin:0}
     .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#0e253e;border:1px solid var(--line);color:#bfe2ff}
     .status{font-size:11px;padding:2px 6px;border-radius:12px;margin-left:8px}
@@ -21,7 +21,6 @@
     .msg{padding:12px;border-radius:12px;margin-bottom:12px;opacity:0;animation:fadeIn .3s forwards}
     .msg.user{background:rgba(0,225,163,.14);border:1px solid rgba(0,225,163,.35);margin-left:15%}
     .msg.ai{background:rgba(78,162,255,.12);border:1px solid rgba(78,162,255,.35);margin-right:15%}
-    .msg.ai .tools{margin-top:8px;display:flex;gap:8px}
     .msg.root{background:rgba(255,91,138,.12);border:1px solid rgba(255,91,138,.35)}
     .msg.system{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);text-align:center}
     .head{font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -32,7 +31,7 @@
     .panel{margin-top:12px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px}
     textarea{width:100%;min-height:90px;resize:none;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--ink)}
     textarea:focus{outline:none;border-color:var(--brand)}
-    .row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px}
+    .row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap}
     .btn{cursor:pointer;border-radius:10px;padding:10px 14px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:13px;transition:all .2s}
     .btn:hover{border-color:var(--brand);background:rgba(0,225,163,.1)}
     .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -45,7 +44,14 @@
     .drop.dragover{border-color:var(--brand);background:rgba(0,225,163,.05)}
     .right{margin-left:auto}
     .switch{display:inline-flex;align-items:center;gap:8px;background:#15283f;border:1px solid var(--line);padding:6px 10px;border-radius:999px}
+    .switch input{accent-color:var(--brand)}
     .hint{font-size:12px;color:var(--muted)}
+    .meta{margin-top:6px;font-size:12px;color:var(--muted)}
+    .tag{display:inline-block;font-size:11px;padding:3px 6px;border:1px solid var(--line);border-radius:999px;margin-right:6px;background:#0e253e;color:#bfe2ff}
+    /* Spinner overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:50}
+    .spinner{width:68px;height:68px;border-radius:50%;border:6px solid rgba(255,255,255,.15);border-top-color:var(--brand);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   </style>
 </head>
@@ -55,7 +61,17 @@
       <h1>ARKAIOS UI</h1>
       <span class="badge">Proveedor: Gemini</span>
       <span class="status connecting" id="connectionStatus">Conectando...</span>
-      <span class="right switch" title="Modo ROOT forzado desde el servidor">
+
+      <span class="right switch" title="Generación de imágenes (HuggingFace)">
+        <input type="checkbox" id="imgToggle" />
+        <label for="imgToggle">Imagen (HF)</label>
+      </span>
+      <span class="switch" title="Generación 3D (Hunyuan)">
+        <input type="checkbox" id="threedToggle" />
+        <label for="threedToggle">3D (Hunyuan)</label>
+      </span>
+
+      <span class="switch" title="Modo ROOT forzado desde el servidor">
         <input type="checkbox" id="rootToggle" checked disabled />
         <label for="rootToggle">Modo ROOT</label>
       </span>
@@ -71,7 +87,7 @@
       </div>
       <div class="previews" id="previews"></div>
 
-      <textarea id="prompt" placeholder="Escribe tu mensaje… (prueba: 'buscar en google: python')" maxlength="4000"></textarea>
+      <textarea id="prompt" placeholder="Escribe tu mensaje… (prueba: 'genera una imagen de un gato steampunk')" maxlength="4000"></textarea>
       <div class="row">
         <div>
           <button class="btn" id="cleanChat">Limpiar chat</button>
@@ -82,6 +98,9 @@
       </div>
     </section>
   </div>
+
+  <!-- overlay spinner -->
+  <div class="overlay" id="overlay"><div class="spinner" aria-label="procesando"></div></div>
 
   <script>
     const API_BASE = window.location.origin;
@@ -108,8 +127,15 @@
     const clearBtn = document.getElementById('clearBtn');
     const pingBtn = document.getElementById('pingBtn');
     const rootToggle = document.getElementById('rootToggle');
+    const imgToggle = document.getElementById('imgToggle');
+    const threedToggle = document.getElementById('threedToggle');
     const cidLabel = document.getElementById('cidLabel');
     const statusEl = document.getElementById('connectionStatus');
+    const overlay = document.getElementById('overlay');
+
+    // estados por defecto (puedes cambiarlos)
+    imgToggle.checked = true;      // Imagen HF ON por defecto
+    threedToggle.checked = false;  // 3D OFF por defecto
 
     cidLabel.textContent = `CID: ${conversationId.slice(0,8)}…`;
 
@@ -119,7 +145,7 @@
     function updateConnectionStatus(ok){ isConnected=ok; statusEl.textContent=ok?'Conectado':'Desconectado'; statusEl.className='status '+(ok?'online':'offline'); }
     function setConnecting(){ statusEl.textContent='Conectando...'; statusEl.className='status connecting'; }
 
-    function addMessage({text, who='ai', attachments=[], isSystem=false}){
+    function addMessage({text, who='ai', attachments=[], isSystem=false, meta=null}){
       const wrap = document.createElement('div');
       let cls = `msg ${who}`; if(isSystem) cls+=' system'; if(who==='ai') cls+=' root';
       wrap.className = cls;
@@ -134,6 +160,31 @@
 
       wrap.appendChild(head);
       wrap.appendChild(body);
+
+      // meta / log de modelo
+      if (meta) {
+        const metaLine = [];
+        if (meta.model_used) metaLine.push(`LLM: ${meta.model_used}`);
+        if (meta.image_model) metaLine.push(`Img: ${meta.image_model}`);
+        if (meta.three_d_model) metaLine.push(`3D: ${meta.three_d_model}`);
+        if (meta.flags) {
+          const f = [];
+          if (meta.flags.imageHF) f.push('Imagen(HF)');
+          if (meta.flags.threeD) f.push('3D(Hunyuan)');
+          if (f.length) metaLine.push(`Flags: ${f.join(', ')}`);
+        }
+        if (metaLine.length) {
+          const metaDiv = document.createElement('div');
+          metaDiv.className = 'meta';
+          metaLine.forEach(t => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = t;
+            metaDiv.appendChild(tag);
+          });
+          wrap.appendChild(metaDiv);
+        }
+      }
 
       // botón para guardar respuesta como archivo .txt
       if (who === 'ai' && !isSystem) {
@@ -154,15 +205,19 @@
         wrap.appendChild(tools);
       }
 
+      // adjuntos (imágenes / links)
       if (attachments?.length){
         const att = document.createElement('div'); att.className='attachments';
         attachments.forEach(a=>{
           const box=document.createElement('div'); box.className='thumb';
-          if(a.type?.startsWith('image/')){
-            const img=new Image(); img.alt=a.name; img.src=a.preview||a.url;
+          if(a.type?.startsWith?.('image/')){
+            const img=new Image(); img.alt=a.name||'imagen'; img.src=a.preview||a.url;
             box.appendChild(img);
+          } else if (a.url && a.name) {
+            const link = document.createElement('a'); link.href=a.url; link.textContent=a.name; link.target='_blank';
+            const s=document.createElement('span'); s.appendChild(link); box.appendChild(s);
           } else {
-            const s=document.createElement('span'); s.textContent='📄 '+(a.name||a.url); box.appendChild(s);
+            const s=document.createElement('span'); s.textContent='📄 '+(a.name||a.url||'archivo'); box.appendChild(s);
           }
           att.appendChild(box);
         });
@@ -237,6 +292,8 @@
       const d = await r.json(); return d.files||[];
     }
 
+    function showOverlay(on){ overlay.style.display = on ? 'flex' : 'none'; }
+
     async function send(){
       const text = input.value.trim();
       if(!text && pendingFiles.length===0) return;
@@ -253,22 +310,44 @@
       if(text || localPreview.length) addMessage({text:text||'(adjuntos)', who:'user', attachments:localPreview});
       input.value='';
 
-      sendBtn.disabled=true; sendBtn.textContent='Enviando…';
+      const flags = { imageHF: imgToggle.checked, threeD: threedToggle.checked };
+      sendBtn.disabled=true; sendBtn.textContent='Enviando…'; showOverlay(true);
+
       try{
         const uploaded = await uploadFiles();
-        const payload = { message: text, files: uploaded, root: true, conversationId }; // ROOT forzado
+        const payload = { message: text, files: uploaded, root: true, conversationId, flags, ui_flags: flags };
         const headers = {'Content-Type':'application/json'}; if (AUTH) headers['Authorization']='Bearer '+AUTH;
+
         const r = await fetch(`${API_BASE}/chat`, {method:'POST', headers, body:JSON.stringify(payload)});
         if(!r.ok){ let m; try{m=(await r.json()).respuesta;}catch{m=`Error ${r.status}`;} throw new Error(m); }
         const data = await r.json();
         updateConnectionStatus(true);
-        addMessage({text:data.respuesta||'(sin respuesta)', who:'ai', attachments:uploaded});
+
+        // adjuntos devueltos por server (imágenes generadas o artefactos 3D)
+        const extraAttachments = [];
+        (data.generated_images||[]).forEach((url,i)=>extraAttachments.push({url, name:`imagen_${i+1}.png`, type:'image/png'}));
+        (data.generated_3d||[]).forEach((obj,i)=>extraAttachments.push({url:obj.url, name:obj.name||`asset_${i+1}`, type:'application/octet-stream'}));
+
+        const meta = {
+          model_used: data.model_used,
+          image_model: data.image_model,
+          three_d_model: data.three_d_model,
+          flags
+        };
+
+        addMessage({
+          text: data.respuesta || '(sin respuesta)',
+          who:'ai',
+          attachments:[...uploaded, ...extraAttachments],
+          meta
+        });
       }catch(e){
         updateConnectionStatus(false);
         addMessage({text:'❌ '+e.message, who:'ai', isSystem:true});
       }finally{
         sendBtn.disabled=false; sendBtn.textContent='Enviar';
         pendingFiles=[]; renderPreviews(); fileInput.value='';
+        showOverlay(false);
       }
     }
 
@@ -297,7 +376,7 @@
 
     async function init(){
       try{ const r=await fetch(`${API_BASE}/health`,{method:'GET',cache:'no-cache'}); updateConnectionStatus(r.ok); }catch{updateConnectionStatus(false);}
-      addMessage({text:'¡Hola! Soy Arkaios (ROOT/Gemini). Puedes pegar capturas con Ctrl+V y usar: "buscar en google: …".', who:'ai'});
+      addMessage({text:'¡Hola! Soy Arkaios (ROOT/Gemini). Pruébame con:\n- "genera una imagen de un gato steampunk"\n- "convierte esto en 3D: ... (si tienes Hunyuan)".', who:'ai'});
     }
     window.addEventListener('load', init);
   </script>

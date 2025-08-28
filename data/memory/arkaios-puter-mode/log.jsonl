@@ -1,0 +1,2 @@
+{"ts": "2025-08-28T08:44:15Z", "role": "user", "text": "generar imagen paisaje futurista", "attachments": []}
+{"ts": "2025-08-28T08:44:15Z", "role": "assistant", "text": "🎨 Comando Puter.js: Generar imagen - 'paisaje futurista'\n\nPara generar imágenes con DALL-E 3:\n\n```javascript\n// Generar imagen con DALL-E 3\nputer.ai.txt2img('paisaje futurista')\n.then(imageElement => {\n    document.body.appendChild(imageElement);\n});\n```", "attachments": []}

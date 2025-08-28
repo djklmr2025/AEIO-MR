@@ -76,7 +76,7 @@
       </div>
       <div class="previews" id="previews"></div>
 
-      <textarea id="prompt" placeholder="Escribe tu mensaje… (Ej: 'Explícame la computación cuántica')" maxlength="4000"></textarea>
+      <textarea id="prompt" placeholder="Escribe tu mensaje… (Ej: 'hola' o 'buscar en google python')" maxlength="4000"></textarea>
       <div class="row">
         <div>
           <button class="btn" id="cleanChat">Limpiar chat</button>
@@ -235,7 +235,7 @@
 
     // Drag & Drop
     const drop = document.getElementById('drop');
-    ['dragenter', 'dragover'].forEach(ev => { 
+    ['dragenter', 'dragoover'].forEach(ev => { 
       drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('dragover'); }); 
       document.addEventListener(ev, e => e.preventDefault()); 
     });
@@ -273,7 +273,7 @@
       }
     });
 
-    // Función principal para enviar mensajes CON PUTER.JS DIRECTAMENTE
+    // Función principal para enviar mensajes
     async function send() {
       const text = input.value.trim();
       if (!text && pendingFiles.length === 0) return;
@@ -303,7 +303,7 @@
       sendBtn.textContent = 'Enviando…';
 
       try {
-        // 1. Verificar si es una búsqueda ROOT (manejada por el servidor)
+        // Detectar si es una búsqueda ROOT (solo cuando se solicita explícitamente)
         const isRootQuery = text.toLowerCase().includes('buscar en google') || 
                            text.toLowerCase().includes('busca en google') ||
                            text.toLowerCase().includes('googlear');
@@ -317,9 +317,9 @@
             },
             body: JSON.stringify({
               message: text,
-              files: [],
+              files: localPreview,
               root: true,
-              conversationId: 'puter-frontend'
+              conversationId: 'arkaios-free-mode'
             })
           });
           
@@ -329,7 +329,7 @@
             who: 'ai'
           });
         } else {
-          // 2. Mensaje normal: usar Puter.js directamente
+          // Mensaje normal: usar Puter.js directamente
           const selectedModel = modelSelector.value;
           
           // Construir mensaje con archivos (si hay)
@@ -341,16 +341,16 @@
             });
           }
           
-          // 3. Enviar a Claude usando Puter.js
+          // Enviar a Claude usando Puter.js
           const response = await puter.ai.chat(fullMessage, {
             model: selectedModel,
             stream: false
           });
           
-          // 4. Procesar respuesta
+          // Procesar respuesta
           const aiResponse = response.message.content[0].text;
           
-          // 5. Mostrar respuesta
+          // Mostrar respuesta
           updateConnectionStatus(true);
           addMessage({
             text: aiResponse,
@@ -434,7 +434,7 @@
         if (typeof puter !== 'undefined') {
           updateConnectionStatus(true);
           addMessage({
-            text: '¡Hola! Soy Arkaios con Claude a través de Puter.js. Puedes adjuntar imágenes y archivos, y seleccionar diferentes modelos de Claude.',
+            text: '¡Hola! Soy Arkaios con Claude a través de Puter.js. Usa "buscar en google [tema]" para activar el modo ROOT con búsquedas.',
             who: 'ai'
           });
         } else {
