@@ -1,6 +1,10 @@
 {
-  "version": 2,
+  "version": 3,
   "builds": [
+    {
+      "src": "server_arkaios.py",
+      "use": "@vercel/python"
+    },
     {
       "src": "*.html",
       "use": "@vercel/static"
@@ -8,8 +12,21 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/arkaios.html"
+      "dest": "/server_arkaios.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.9"
+  },
+  "functions": {
+    "server_arkaios.py": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
 }

@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.env
+.local
+.vscode
+*.bat
+*.command
+Makefile
+start_arkaios.sh
+install_arkaios.sh
