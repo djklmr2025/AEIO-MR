@@ -4,12 +4,12 @@
     {
       "label": "Start Arkaios (Codespaces)",
       "type": "shell",
-      "command": "scripts/start_arkaios.sh",
+      "command": "start_arkaios.sh",
       "problemMatcher": [],
       "isBackground": false,
       "options": {
         "env": {
-          "SERVER_FILE": "server_gemini_merged_root.py"
+          "SERVER_FILE": "server_arkaios.py"
         }
       },
       "presentation": {
