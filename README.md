@@ -7,4 +7,4 @@ Pruebalo via web:
 https://aeio-9y08gj50x-arkaios-projects.vercel.app/
 ---
 
-✨ **¡Arkaios está listo para usar con Gemini IA!** ✨
+✨ **¡Arkaios está listo para usar Puter!** ✨
