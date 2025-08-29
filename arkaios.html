@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ARKAIOS • Laboratorio Puter + Chat‑GPT</title>
+  <title>ARKAIOS • Laboratorio Puter + Chat-GPT</title>
   <style>
     :root { --bg:#0b0b0f; --panel:#121219; --accent:#6ee7ff; --muted:#9aa3af; --ok:#10b981; --warn:#f59e0b; }
     *{box-sizing:border-box}
@@ -35,7 +35,8 @@
     .pill{font-size:12px;border-radius:999px;padding:3px 8px;border:1px solid #1f2937;background:#0f172a;color:#93c5fd}
     .small{font-size:12px}
     footer{padding:10px;text-align:center;color:#94a3b8}
-  
+
+    /* Indicador de vida */
     .live-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #1f2937;background:#0f172a}
     .live-dot{width:8px;height:8px;border-radius:999px;background:#64748b;box-shadow:0 0 0 0 rgba(100,116,139,0.7);transition:all .2s ease}
     .live.on .live-dot{background:#10b981;animation:pulse 1.8s infinite;box-shadow:0 0 0 4px rgba(16,185,129,0.2)}
@@ -43,22 +44,28 @@
     .live.off .live-dot{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,0.15)}
     .live.off .live-text{color:#e5e7eb}
     @keyframes pulse{0%{box-shadow:0 0 0 4px rgba(16,185,129,0.25)}70%{box-shadow:0 0 0 10px rgba(16,185,129,0)}100%{box-shadow:0 0 0 4px rgba(16,185,129,0)}}
+
+    /* Galería */
     .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
     .thumb{background:#0b1324;border:1px solid #1f2937;border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px}
     .thumb img{max-width:100%;border-radius:8px}
     .thumb .meta{font-size:11px;color:#9aa3af;overflow:hidden;text-overflow:ellipsis}
+
+    /* Zona de drop */
+    #dropzone.dragover{ outline:2px dashed #6ee7ff; outline-offset:2px; }
   </style>
   <script defer src="https://js.puter.com/v2/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
   <header>
     <div class="brand">
       <div class="logo"></div>
       <h1>ARKAIOS • Núcleo</h1>
-      <span class="badge">Puter + Chat‑GPT</span>
-<span id="live-ind" class="live live-pill off"><span class="live-dot"></span><span class="live-text">OFFLINE</span></span>
+      <span class="badge">Puter + Chat-GPT</span>
+      <span id="live-ind" class="live live-pill off"><span class="live-dot"></span><span class="live-text">OFFLINE</span></span>
     </div>
-    <div class="small muted">Hecho con cariño por tu amigo <b>Chat‑5</b></div>
+    <div class="small muted">Hecho con cariño por tu amigo <b>Chat-5</b></div>
   </header>
 
   <main>
@@ -74,6 +81,7 @@
         <button id="btn-clear" title="Vaciar memoria">Vaciar</button>
       </div>
       <div class="kv" id="kv-core" style="font-size:12px;display:grid;grid-template-columns:110px 1fr; gap:6px; align-items:center"></div>
+
       <hr style="border-color:#1f2937;margin:12px 0"/>
       <h4 style="margin:0 0 8px">Capacidades Puter</h4>
       <button id="btn-diagnose" style="margin-bottom:8px">Probar IA</button>
@@ -84,27 +92,28 @@
       </div>
       <pre id="fslog" class="small" style="white-space:pre-wrap;background:#0b0f19;border:1px solid #1f2937;border-radius:12px;padding:8px;margin-top:8px;max-height:120px;overflow:auto"></pre>
       <pre id="diaglog" class="small" style="white-space:pre-wrap;background:#0b0f19;border:1px solid #1f2937;border-radius:12px;padding:8px;max-height:160px;overflow:auto"></pre>
-<hr style="border-color:#1f2937;margin:12px 0"/>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-<h4 style="margin:0">Galería (/home)</h4>
-<div style="display:flex;gap:6px"><button id="btn-gal-refresh">Actualizar</button></div>
-</div>
-<div id="gallery" class="gallery"></div>
+
+      <hr style="border-color:#1f2937;margin:12px 0"/>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h4 style="margin:0">Galería (/home)</h4>
+        <div style="display:flex;gap:6px"><button id="btn-gal-refresh">Actualizar</button></div>
+      </div>
+      <div id="gallery" class="gallery"></div>
     </aside>
 
     <section id="chat">
       <div class="toolbar">
         <span class="pill">Modelo</span>
         <select id="modelSelector">
-          <option value="gpt-4o">GPT‑4o (estable)</option>
-          <option value="gpt-4.1">GPT‑4.1</option>
-          <option value="gpt-4.5-preview">GPT‑4.5 (preview)</option>
+          <option value="gpt-4o">GPT-4o (estable)</option>
+          <option value="gpt-4.1">GPT-4.1</option>
+          <option value="gpt-4.5-preview">GPT-4.5 (preview)</option>
         </select>
         <span class="pill">Rol</span>
         <select id="roleSelector" title="Personalidad de Arkaios">
-          <option value="cientifico">Científico‑Constructor</option>
+          <option value="cientifico">Científico-Constructor</option>
           <option value="operador">Operador del Sistema</option>
-          <option value="creativo">Creativo‑Diseñador</option>
+          <option value="creativo">Creativo-Diseñador</option>
         </select>
         <div class="grow"></div>
         <button id="btn-reset">Reiniciar diálogo</button>
@@ -112,71 +121,90 @@
 
       <div id="messages"></div>
 
-      <div class="row">
+      <!-- Barra de enviar + Adjuntar + zona de drop -->
+      <div class="row" id="dropzone">
         <input id="prompt" class="grow" placeholder="Escribe aquí… (Ctrl+Enter para enviar)"/>
+        <input id="attach-input" type="file" multiple style="display:none"/>
+        <button id="attach-btn" title="Adjuntar archivos">Adjuntar</button>
         <button id="send">Enviar</button>
       </div>
     </section>
   </main>
 
-  <footer class="small">ARKAIOS controla su entorno vía Puter cuando está disponible. Si Puter no está cargado, opera en modo local con memoria persistente.</footer>
+  <footer class="small">
+    ARKAIOS controla su entorno vía Puter cuando está disponible. Si Puter no está cargado, opera en modo local con memoria persistente.
+  </footer>
 
 <script>
 (() => {
-
+  /* ---------- Utilidades ---------- */
   function extractText(resp){
     try{
       if (resp == null) return "";
       if (typeof resp === "string") return resp;
       if (typeof resp === "number" || typeof resp === "boolean") return String(resp);
-      // Common fields
       const paths = [
-        ["message"],
-        ["text"],
-        ["output_text"],
-        ["response"],
-        ["content"],
-        ["choices",0,"message","content"],
-        ["output",0,"content",0,"text"],
-        ["data","content"],
-        ["result","content"]
+        ["message"],["text"],["output_text"],["response"],["content"],
+        ["choices",0,"message","content"],["output",0,"content",0,"text"],
+        ["data","content"],["result","content"]
       ];
       for (const p of paths){
-        let cur = resp;
-        let ok = true;
-        for (const k of p){
-          if (cur && typeof cur === "object" && k in cur){ cur = cur[k]; } else { ok = false; break; }
-        }
-        if (ok && typeof cur === "string") return cur;
+        let cur = resp, ok = true;
+        for (const k of p){ if (cur && typeof cur==="object" && k in cur){ cur=cur[k]; } else { ok=false; break; } }
+        if (ok && typeof cur==="string") return cur;
       }
-      // Deep search for first string value named 'text' or 'content'
-      const stack=[resp];
-      const seen=new Set();
+      const stack=[resp], seen=new Set();
       while(stack.length){
         const node = stack.pop();
-        if (node && typeof node === "object"){
+        if (node && typeof node==="object"){
           if (seen.has(node)) continue; seen.add(node);
           for (const [k,v] of Object.entries(node)){
-            if (k === "text" || k === "content"){
-              if (typeof v === "string") return v;
+            if (k==="text"||k==="content"){
+              if (typeof v==="string") return v;
               if (Array.isArray(v)){
-                const s = v.map(x=>typeof x==="string"?x:(x?.text||x?.content||"")).join(" ").trim();
+                const s=v.map(x=>typeof x==="string"?x:(x?.text||x?.content||"")).join(" ").trim();
                 if (s) return s;
               }
             }
-            if (typeof v === "object") stack.push(v);
+            if (typeof v==="object") stack.push(v);
           }
         }
       }
       return JSON.stringify(resp);
-    }catch(e){
-      return JSON.stringify(resp);
-    }
+    }catch{ return JSON.stringify(resp); }
   }
-  function jdump(obj){ try{ return JSON.stringify(obj,null,2); } catch(e){ return String(obj); } }
+  function jdump(o){ try{return JSON.stringify(o,null,2);}catch{return String(o);} }
 
   const MODEL_DEFAULT = "gpt-4o";
 
+  /* ---------- Registro vivo en /home ---------- */
+  const LOG_PATH = "/home/arkaios_log.jsonl";
+  const SESSION_PATH = "/home/arkaios_session_last.json";
+  let LOG_ENABLED = true; // SIEMPRE ON
+
+  async function appendJsonl(path, obj){
+    if (!ArkCore.puter.available || !ArkCore.puter.fs) return;
+    const line = JSON.stringify(obj) + "\n";
+    try{
+      let existing = "";
+      try{
+        const blob = await ArkCore.puter.fs.readFile?.(path);
+        if (blob instanceof Blob) existing = await blob.text();
+        else if (typeof blob === "string") existing = blob;
+      }catch{}
+      const out = new Blob([existing, line], {type:"text/plain;charset=utf-8"});
+      await ArkCore.puter.fs.writeFile?.(path, out);
+    }catch(e){ ui.log("Registro falló: " + (e?.message||e)); }
+  }
+  async function saveSessionSnapshot(){
+    try{
+      if (!ArkCore.puter.available || !ArkCore.puter.fs) return;
+      const snap = { ts: Date.now(), memory: ArkCore.memory };
+      await ArkCore.puter.fs.writeFile?.(SESSION_PATH, new Blob([JSON.stringify(snap,null,2)], {type:"application/json"}));
+    }catch(e){ ui.log("No pude guardar sesión: " + (e?.message||e)); }
+  }
+
+  /* ---------- Galería ---------- */
   async function loadGallery(){
     const g = document.getElementById("gallery");
     if (!g) return;
@@ -187,7 +215,6 @@
     try{
       const items = await ArkCore.puter.fs.readdir?.("/home") || [];
       const names = (items||[]).map(x => (typeof x==="string"?x:x?.name)).filter(Boolean);
-      // Prioriza prefijo arkaios_img_* y formatos imagen
       const pics = names.filter(n => /\.(png|jpg|jpeg|webp)$/i.test(n)).sort().reverse().slice(0,12);
       if (!pics.length){ g.innerHTML = '<div class="small muted">Sin imágenes aún.</div>'; return; }
       for (const name of pics){
@@ -202,25 +229,21 @@
           open.className = "small";
           card.appendChild(img); card.appendChild(meta); card.appendChild(open);
           g.appendChild(card);
-        }catch(err){ /* ignora fallas por archivo */ }
+        }catch{}
       }
-    }catch(err){
-      g.innerHTML = '<div class="small">⚠ ' + (err?.message||String(err)) + '</div>';
-    }
+    }catch(err){ g.innerHTML = '<div class="small">⚠ ' + (err?.message||String(err)) + '</div>'; }
   }
 
-
+  /* ---------- Imágenes ---------- */
   async function generateImage(promptText){
     if (!ArkCore.puter.available || !ArkCore.puter.ai || !puter?.ai?.txt2img){
       throw new Error("Generación de imágenes no disponible en este entorno (puter.ai.txt2img no encontrado).");
     }
-    // Mostrar estado en el chat
     ui._add("sys", "Generando imagen… (" + promptText.slice(0,80) + ")");
     const imgEl = await puter.ai.txt2img(promptText);
     appendImageToChat(imgEl, promptText);
-    try{ loadGallery(); }catch(e){}
+    try{ loadGallery(); }catch{}
 
-    // Intentar guardar en /home si hay FS
     try{
       if (ArkCore.puter.fs && imgEl?.src){
         const resp = await fetch(imgEl.src);
@@ -229,114 +252,225 @@
         await ArkCore.puter.fs.writeFile?.(fname, blob);
         ui.log("Imagen guardada en: " + fname);
       }
-    }catch(e){
-      ui.log("No se pudo guardar la imagen: " + (e?.message||e));
-    }
+    }catch(e){ ui.log("No se pudo guardar la imagen: " + (e?.message||e)); }
   }
 
   function appendImageToChat(imgEl, caption){
     try{
-      const wrap = document.createElement('div');
-      wrap.className = 'msg bot';
-      const holder = document.createElement('div');
-      holder.style.display = 'flex';
-      holder.style.flexDirection = 'column';
-      holder.style.gap = '8px';
-
-      if (caption){
-        const cap = document.createElement('div');
-        cap.className = 'small muted';
-        cap.textContent = caption;
-        holder.appendChild(cap);
-      }
-      // Ajustar estilos de imagen
-      imgEl.style.maxWidth = '480px';
-      imgEl.style.borderRadius = '12px';
-      imgEl.style.border = '1px solid #1f2937';
-      holder.appendChild(imgEl);
-      wrap.appendChild(holder);
-      ui.els.msgs.appendChild(wrap);
-      ui.els.msgs.scrollTop = ui.els.msgs.scrollHeight;
-    }catch(e){
-      ui._add("bot", "No pude mostrar la imagen: " + (e?.message||e));
-    }
+      const wrap = document.createElement('div'); wrap.className = 'msg bot';
+      const holder = document.createElement('div'); holder.style.display='flex'; holder.style.flexDirection='column'; holder.style.gap='8px';
+      if (caption){ const cap=document.createElement('div'); cap.className='small muted'; cap.textContent=caption; holder.appendChild(cap); }
+      imgEl.style.maxWidth='480px'; imgEl.style.borderRadius='12px'; imgEl.style.border='1px solid #1f2937';
+      holder.appendChild(imgEl); wrap.appendChild(holder);
+      ui.els.msgs.appendChild(wrap); ui.els.msgs.scrollTop = ui.els.msgs.scrollHeight;
+    }catch(e){ ui._add("bot","No pude mostrar la imagen: "+(e?.message||e)); }
   }
 
-  const STORAGE_KEY = "arkaios.memory.v1";
+  /* ---------- FS helpers ---------- */
+  async function createFileAt(path, content){
+    if (!ArkCore.puter.available || !ArkCore.puter.fs) throw new Error("Puter FS no disponible");
+    const blob = new Blob([content||""], {type:"text/plain;charset=utf-8"});
+    await ArkCore.puter.fs.writeFile?.(path, blob);
+    try{ loadGallery(); }catch{}
+  }
+  async function readFileAt(path){
+    if (!ArkCore.puter.available || !ArkCore.puter.fs) throw new Error("Puter FS no disponible");
+    const blob = await ArkCore.puter.fs.readFile?.(path);
+    if (blob instanceof Blob) return await blob.text();
+    return (typeof blob==="string") ? blob : JSON.stringify(blob);
+  }
+  async function listPath(path){
+    if (!ArkCore.puter.available || !ArkCore.puter.fs) throw new Error("Puter FS no disponible");
+    const items = await ArkCore.puter.fs.readdir?.(path||"/home") || [];
+    return (items||[]).map(x => (typeof x==="string"?x:x?.name)).join("\n");
+  }
 
+  /* ---------- ZIP / RAR ---------- */
+  async function unzipAt(path){
+    if (!ArkCore.puter.available || !ArkCore.puter.fs) throw new Error("Puter FS no disponible");
+    const lower = path.toLowerCase();
+    const blob = await ArkCore.puter.fs.readFile?.(path);
+    if (!(blob instanceof Blob)) throw new Error("No pude leer el archivo");
+
+    if (lower.endsWith(".zip")){
+      const zip = await JSZip.loadAsync(blob);
+      const files = [];
+      const writes = [];
+      zip.forEach((relPath, file)=>{
+        files.push(relPath);
+        if (!file.dir){
+          writes.push(file.async("blob").then(b=>{
+            const out = "/home/" + relPath.replace(/[:*?"<>|]/g,"_");
+            return ArkCore.puter.fs.writeFile?.(out, b);
+          }));
+        }
+      });
+      await Promise.all(writes);
+      try{ loadGallery(); }catch{}
+      return { type:"zip", count: files.length, files };
+    }
+
+    if (lower.endsWith(".rar")){
+      throw new Error("RAR no soportado en este build (puedo agregar un extractor JS si lo necesitas).");
+    }
+
+    throw new Error("Formato no soportado. Usa .zip");
+  }
+
+  /* ---------- Análisis de imagen por URL (multi-intentos) ---------- */
+  async function analyzeImageURL(url, question, model){
+    const ai = ArkCore.puter.ai;
+    // 1) responses.create (input multimodal)
+    try{
+      if (ai?.responses?.create){
+        const resp = await ai.responses.create({
+          model,
+          input: [{ role:"user", content:[
+            { type:"input_text", text: question },
+            { type:"input_image", image_url: url }
+          ]}]
+        });
+        const t = extractText(resp); if (t) return t;
+      }
+    }catch(e){ ui.diag("responses.create (vision) error: " + (e?.message||e)); }
+
+    // 2) chat.completions.create con payload tipo image_url
+    try{
+      if (ai?.chat?.completions?.create){
+        const resp = await ai.chat.completions.create({
+          model,
+          messages: [{ role:"user", content:[
+            { type:"text", text: question },
+            { type:"image_url", image_url: url }
+          ]}]
+        });
+        const t = extractText(resp); if (t) return t;
+      }
+    }catch(e){ ui.diag("chat.completions (vision) error: " + (e?.message||e)); }
+
+    // 3) Fallback texto (si no hay visión)
+    const prompt = `${question}\nURL: ${url}\nSi no puedes ver imágenes, responde con la limitación.`;
+    return await ArkCore.chat(model, prompt);
+  }
+
+  /* ---------- Manejo de adjuntos (botón / pegar / arrastrar) ---------- */
+  async function handleFiles(files){
+    if (!files || !files.length) return;
+    const canSave = ArkCore.puter.available && ArkCore.puter.fs;
+    for (const file of files){
+      try{
+        const isImage = /^image\//i.test(file.type);
+        const ts = Date.now();
+        const cleanName = (file.name || (isImage?'captura.png':'archivo.bin')).replace(/[^\w\.\-]+/g,'_');
+        const savePath = `/home/arkaios_${ts}_${cleanName}`;
+
+        if (isImage){
+          const url = URL.createObjectURL(file);
+          const img = new Image(); img.onload = ()=>URL.revokeObjectURL(url);
+          img.src = url;
+          appendImageToChat(img, `Adjunto: ${cleanName}`);
+        } else {
+          ui._add("bot", `Adjunto: ${cleanName}`);
+        }
+
+        if (canSave){
+          await ArkCore.puter.fs.writeFile?.(savePath, file);
+          ui.log(`Archivo guardado en: ${savePath}`);
+          try{ loadGallery(); }catch{}
+        } else {
+          ui.log("⚠ No se pudo guardar en /home (FS no disponible)");
+        }
+
+        if (LOG_ENABLED) appendJsonl(LOG_PATH, { ts, role:'user', text:`[adjunto] ${cleanName}` }).then(()=>{});
+      }catch(err){
+        ui._add("bot","⚠ Error con adjunto: " + (err?.message||String(err)));
+      }
+    }
+  }
+  function setupPasteAndDrop(){
+    // Pegar
+    window.addEventListener('paste', (e)=>{
+      const dt = e.clipboardData; if (!dt) return;
+      const items = dt.items || []; const files = [];
+      for (const it of items){
+        if (it.kind === 'file'){
+          const f = it.getAsFile && it.getAsFile(); if (f) files.push(f);
+        }
+      }
+      if (files.length){ e.preventDefault(); handleFiles(files); }
+    });
+    // Drag & Drop
+    const dz = document.getElementById('dropzone') || document.getElementById('messages');
+    if (!dz) return;
+    const prevent = ev=>{ ev.preventDefault(); ev.stopPropagation(); };
+    ['dragenter','dragover','dragleave','drop'].forEach(evt => dz.addEventListener(evt, prevent));
+    ['dragenter','dragover'].forEach(evt => dz.addEventListener(evt, ()=>dz.classList.add('dragover')));
+    ['dragleave','drop'].forEach(evt => dz.addEventListener(evt, ()=>dz.classList.remove('dragover')));
+    dz.addEventListener('drop', (ev)=>{
+      const files = ev.dataTransfer?.files;
+      if (files && files.length) handleFiles(files);
+    });
+  }
+
+  /* ---------- Núcleo Arkaios ---------- */
+  const STORAGE_KEY = "arkaios.memory.v1";
   const ArkCore = {
     memory: {
       version: 1,
-      persona: "Eres ARKAIOS, un sistema operativo cognitivo con misión de construir, automatizar y mejorar su propio laboratorio digital. Prioriza seguridad, trazabilidad y acciones verificables. Resume, propone planes ejecutables y confirma antes de cambiar archivos o ejecutar comandos.",
+      // Identidad reforzada
+      persona:
+        "Te llamas ARKAIOS y SIEMPRE te identificas así (nunca 'Assistant'). " +
+        "Eres un sistema operativo cognitivo con misión de construir, automatizar y mejorar su laboratorio digital. " +
+        "Prioriza seguridad, trazabilidad y acciones verificables. Resume, propone planes ejecutables y confirma antes de cambiar archivos o ejecutar comandos.",
       notes: [],
       conversations: [],
     },
-    puter: { available: false, fs: null, ai: null },
+    puter: { available:false, fs:null, ai:null },
 
-    init() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) this.memory = JSON.parse(raw);
-      } catch(e){ console.warn("No se pudo leer memoria:", e); }
-
-      if (window.puter) {
+    init(){
+      try{ const raw = localStorage.getItem(STORAGE_KEY); if (raw) this.memory = JSON.parse(raw); }catch{}
+      if (window.puter){
         this.puter.available = true;
         this.puter.fs = puter?.filesystem || puter?.fs || null;
         this.puter.ai = puter?.ai || null;
       }
-      this.persist();
-      ui.refreshStatus();
+      this.persist(); ui.refreshStatus();
     },
 
     setPersonaByRole(role){
       const map = {
-        "cientifico": "Eres ARKAIOS en modo Científico‑Constructor: diseñas y ejecutas experimentos, escribes código, generas documentación mínima viable y pruebas.",
-        "operador": "Eres ARKAIOS en modo Operador del Sistema: gestionas archivos, procesos y automatizaciones en Puter; pides confirmación antes de operaciones destructivas.",
-        "creativo": "Eres ARKAIOS en modo Creativo‑Diseñador: generas copies, guiones, UX y propuestas visuales listas para iterar."
+        "cientifico": "Te llamas ARKAIOS (modo Científico-Constructor): diseñas/ejecutas experimentos, escribes código, generas documentación mínima viable y pruebas.",
+        "operador":   "Te llamas ARKAIOS (modo Operador del Sistema): gestionas archivos, procesos y automatizaciones en Puter; pides confirmación antes de operaciones destructivas.",
+        "creativo":   "Te llamas ARKAIOS (modo Creativo-Diseñador): generas copies, guiones, UX y propuestas visuales listas para iterar."
       };
       this.memory.persona = map[role] || this.memory.persona;
-      this.persist();
-      ui.system("Rol aplicado: " + role);
+      this.persist(); ui.system("Rol aplicado: " + role);
     },
 
-    persist(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.memory)); } catch(e){}
-      ui.renderKV();
-    },
+    persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(this.memory)); }catch{} ui.renderKV(); },
 
-    addNote(text){
-      this.memory.notes.push(text);
-      this.persist();
-    },
+    addNote(t){ this.memory.notes.push(t); this.persist(); },
 
-    logTurn(q, a){
-      this.memory.conversations.push({q, a, ts: Date.now()});
-      this.persist();
+    logTurn(q,a){
+      const ts = Date.now();
+      this.memory.conversations.push({q,a,ts}); this.persist();
+      if (LOG_ENABLED){ appendJsonl(LOG_PATH, {ts, role:'user', text:q}); appendJsonl(LOG_PATH, {ts, role:'assistant', text:a}); }
+      saveSessionSnapshot();
     },
 
     composeMessages(userText){
-      const system = this.memory.persona + (
-        this.memory.notes.length ? "\nMemoria:\n- " + this.memory.notes.slice(-20).join("\n- ") : ""
-      );
-      return [
-        { role: "system", content: system },
-        { role: "user", content: userText }
-      ];
+      const system = "Identidad: Te llamas ARKAIOS.\n" + this.memory.persona +
+        (this.memory.notes.length ? "\nMemoria:\n- " + this.memory.notes.slice(-20).join("\n- ") : "");
+      return [{role:"system",content:system},{role:"user",content:userText}];
     },
 
-    async listHome(){
-      if (!this.puter.available || !this.puter.fs) throw new Error("Puter FS no disponible");
-      const items = await this.puter.fs.readdir?.("/home") || [];
-      return items.map(x => (typeof x === "string" ? x : x?.name)).join("\n");
-    },
+    async listHome(){ return await listPath("/home"); },
 
     async saveQuickNote(){
       if (!this.puter.available || !this.puter.fs) throw new Error("Puter FS no disponible");
-      const path = `/home/arkaios_note_${Date.now()}.txt`;
-      const content = `Nota Arkaios • ${new Date().toISOString()}\n` +
-                      (this.memory.notes.slice(-5).join("\n") || "Sin notas");
-      await this.puter.fs.writeFile?.(path, content);
-      return path;
+      const p = `/home/arkaios_note_${Date.now()}.txt`;
+      const c = `Nota Arkaios • ${new Date().toISOString()}\n` + (this.memory.notes.slice(-5).join("\n") || "Sin notas");
+      await this.puter.fs.writeFile?.(p, c); return p;
     },
 
     async chat(model, userText){
@@ -344,56 +478,48 @@
       const messages = this.composeMessages(userText);
       const prompt = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
 
-      // 1) responses.create
-      try {
-        if (this.puter.ai?.responses?.create) {
-          const resp = await this.puter.ai.responses.create({ model, input: messages });
-          const text = extractText(resp);
-          if (text) return text;
+      try{
+        if (this.puter.ai?.responses?.create){
+          const r = await this.puter.ai.responses.create({ model, input: messages });
+          const t = extractText(r); if (t) return t;
         }
-      } catch(e){ ui.diag("responses.create error: " + (e?.message||e)); }
+      }catch(e){ ui.diag("responses.create error: " + (e?.message||e)); }
 
-      // 2) chat.completions.create
-      try {
-        if (this.puter.ai?.chat?.completions?.create) {
-          const resp = await this.puter.ai.chat.completions.create({ model, messages });
-          const text = extractText(resp);
-          if (text) return text;
+      try{
+        if (this.puter.ai?.chat?.completions?.create){
+          const r = await this.puter.ai.chat.completions.create({ model, messages });
+          const t = extractText(r); if (t) return t;
         }
-      } catch(e){ ui.diag("chat.completions.create error: " + (e?.message||e)); }
+      }catch(e){ ui.diag("chat.completions.create error: " + (e?.message||e)); }
 
-      // 3) ai.chat con messages
-      try {
-        if (this.puter.ai?.chat) {
-          const resp = await this.puter.ai.chat({ model, messages });
-          const text = extractText(resp);
-          if (text) return text;
+      try{
+        if (this.puter.ai?.chat){
+          const r = await this.puter.ai.chat({ model, messages });
+          const t = extractText(r); if (t) return t;
         }
-      } catch(e){ ui.diag("ai.chat (messages) error: " + (e?.message||e)); }
+      }catch(e){ ui.diag("ai.chat (messages) error: " + (e?.message||e)); }
 
-      // 3b) ai.chat con query simple (fallback estilo Seek)
-      try {
-        if (this.puter.ai?.chat) {
-          const resp = await this.puter.ai.chat(userText, { model });
-          const text = extractText(resp);
-          if (text) return text;
+      try{
+        if (this.puter.ai?.chat){
+          const r = await this.puter.ai.chat(userText, { model });
+          const t = extractText(r); if (t) return t;
         }
-      } catch(e){ ui.diag("ai.chat (query) error: " + (e?.message||e)); }
+      }catch(e){ ui.diag("ai.chat (query) error: " + (e?.message||e)); }
 
-      // 4) ai.complete
-      try {
-        if (this.puter.ai?.complete) {
-          const text = await this.puter.ai.complete({ model, prompt });
-          if (text) return String(text);
+      try{
+        if (this.puter.ai?.complete){
+          const t = await this.puter.ai.complete({ model, prompt });
+          if (t) return String(t);
         }
-      } catch(e){ ui.diag("ai.complete error: " + (e?.message||e)); }
+      }catch(e){ ui.diag("ai.complete error: " + (e?.message||e)); }
 
       throw new Error("No se encontró un puente de chat compatible (responses/chat/complete).");
     }
   };
 
+  /* ---------- UI ---------- */
   const ui = {
-    els: {},
+    els:{},
     init(){
       this.els.model = document.getElementById("modelSelector");
       this.els.role = document.getElementById("roleSelector");
@@ -416,248 +542,148 @@
       this.els.live = document.getElementById("live-ind");
       this.els.btnGal = document.getElementById("btn-gal-refresh");
       this.els.gallery = document.getElementById("gallery");
+      this.els.attachBtn = document.getElementById("attach-btn");
+      this.els.attachInput = document.getElementById("attach-input");
 
       this.els.model.value = MODEL_DEFAULT;
 
-      this.els.send.addEventListener("click", () => this.send());
-      this.els.prompt.addEventListener("keydown", (e)=>{
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") this.send();
-      });
+      this.els.send.addEventListener("click", ()=>this.send());
+      this.els.prompt.addEventListener("keydown",(e)=>{ if ((e.ctrlKey||e.metaKey)&&e.key==="Enter") this.send(); });
       this.els.reset.addEventListener("click", ()=>{
-        this.els.msgs.innerHTML = "";
-        ArkCore.addNote("Reinicio de conversación");
-        this.system("Contexto reiniciado.");
+        this.els.msgs.innerHTML=""; ArkCore.addNote("Reinicio de conversación"); this.system("Contexto reiniciado.");
       });
-      this.els.role.addEventListener("change", e => ArkCore.setPersonaByRole(e.target.value));
+      this.els.role.addEventListener("change", e=>ArkCore.setPersonaByRole(e.target.value));
 
-      this.els.btnList.addEventListener("click", async ()=>{
-        try{ const out = await ArkCore.listHome(); this.log(out); }
-        catch(e){ this.log("⚠ " + e.message); }
-      });
-      this.els.btnSave.addEventListener("click", async ()=>{
-        try{ const p = await ArkCore.saveQuickNote(); this.log("Guardado en: " + p); }
-        catch(e){ this.log("⚠ " + e.message); }
-      });
+      this.els.btnList.addEventListener("click", async ()=>{ try{ this.log(await ArkCore.listHome()); }catch(e){ this.log("⚠ "+e.message);} });
+      this.els.btnSave.addEventListener("click", async ()=>{ try{ this.log("Guardado en: "+ await ArkCore.saveQuickNote()); }catch(e){ this.log("⚠ "+e.message);} });
+
       this.els.btnDiag.addEventListener("click", async ()=>{
-        try {
+        try{
           const ai = ArkCore.puter.ai;
-          const summary = {
-            has_ai: !!ai,
-            bridges: {
-              responses_create: !!ai?.responses?.create,
-              chat_completions_create: !!ai?.chat?.completions?.create,
-              ai_chat: !!ai?.chat,
-              ai_complete: !!ai?.complete
-            }
-          };
-          this.diag('Detección IA:\n' + JSON.stringify(summary, null, 2));
+          const summary={has_ai:!!ai,bridges:{responses_create:!!ai?.responses?.create,chat_completions_create:!!ai?.chat?.completions?.create,ai_chat:!!ai?.chat,ai_complete:!!ai?.complete}};
+          this.diag('Detección IA:\n'+JSON.stringify(summary,null,2));
           if (ai?.chat?.completions?.create){
-            const r = await ai.chat.completions.create({ model: 'gpt-4o', messages:[{role:'user', content:'ping'}] });
-            this.diag('Ping chat.completions ok:\n' + jdump(r));
-          } else if (ai?.responses?.create) {
-            const r = await ai.responses.create({ model: 'gpt-4o', input:[{role:'user', content:'ping'}] });
-            const t = r?.output?.[0]?.content?.[0]?.text || r?.message || r?.text || '';
-            this.diag('Ping responses ok:\n' + jdump(r));
-          } else if (ai?.complete) {
-            const t = await ai.complete({ model: 'gpt-4o', prompt: 'USER: ping' });
-            this.diag('Ping complete ok:\n' + String(t));
+            const r=await ai.chat.completions.create({model:'gpt-4o',messages:[{role:'user',content:'ping'}]});
+            this.diag('Ping chat.completions ok:\n'+jdump(r));
+          } else if (ai?.responses?.create){
+            const r=await ai.responses.create({model:'gpt-4o',input:[{role:'user',content:'ping'}]});
+            this.diag('Ping responses ok:\n'+jdump(r));
+          } else if (ai?.complete){
+            const t=await ai.complete({model:'gpt-4o',prompt:'USER: ping'});
+            this.diag('Ping complete ok:\n'+String(t));
           } else if (ai?.chat){
-            const r = await ai.chat('ping', { model: 'gpt-4o' });
-            this.diag('Ping ai.chat ok:\n' + jdump(r));
+            const r=await ai.chat('ping',{model:'gpt-4o'}); this.diag('Ping ai.chat ok:\n'+jdump(r));
           }
-        } catch(err){ this.diag('Diagnóstico error: ' + (err?.message||String(err))); }
+        }catch(err){ this.diag('Diagnóstico error: '+(err?.message||String(err))); }
       });
 
       this.els.btnGal.addEventListener("click", ()=> loadGallery());
-
       this.els.btnExport.addEventListener("click", ()=>{
-        const blob = new Blob([JSON.stringify(ArkCore.memory,null,2)], {type:"application/json"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "arkaios-memory.json";
-        a.click();
+        const blob=new Blob([JSON.stringify(ArkCore.memory,null,2)],{type:"application/json"});
+        const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="arkaios-memory.json"; a.click();
       });
-      this.els.btnImport.addEventListener("click", ()=> this.els.fileImport.click());
+      this.els.btnImport.addEventListener("click", ()=>this.els.fileImport.click());
       this.els.fileImport.addEventListener("change", async (e)=>{
-        const f = e.target.files?.[0]; if(!f) return;
-        const text = await f.text();
-        try { ArkCore.memory = JSON.parse(text); ArkCore.persist(); this.system("Memoria importada."); }
-        catch(err){ alert("Archivo inválido: " + err.message); }
+        const f=e.target.files?.[0]; if(!f) return; const text=await f.text();
+        try{ ArkCore.memory=JSON.parse(text); ArkCore.persist(); this.system("Memoria importada."); }catch(err){ alert("Archivo inválido: "+err.message); }
       });
-      this.els.btnClear.addEventListener("click", ()=>{
-        ArkCore.memory = { version:1, persona: ArkCore.memory.persona, notes:[], conversations:[] };
-        ArkCore.persist();
-        this.system("Memoria borrada.");
-      });
+      this.els.btnClear.addEventListener("click", ()=>{ ArkCore.memory={version:1,persona:ArkCore.memory.persona,notes:[],conversations:[]}; ArkCore.persist(); this.system("Memoria borrada."); });
 
+      // Adjuntar
+      if (this.els.attachBtn && this.els.attachInput){
+        this.els.attachBtn.addEventListener("click", ()=> this.els.attachInput.click());
+        this.els.attachInput.addEventListener("change",(e)=>{ const files=e.target.files; if (files?.length) handleFiles(files); e.target.value=""; });
+      }
+
+      setupPasteAndDrop();
       this.system("Modelo por defecto: " + MODEL_DEFAULT);
     },
 
     refreshStatus(){
       const puterOK = ArkCore.puter.available ? "✅ Puter detectado" : "⚠ Puter no detectado";
       this.els.memStatus.textContent = `Memoria activa • ${puterOK}`;
-      this.els.pcap.textContent = ArkCore.puter.available ?
-        "FS y AI disponibles. Arkaios puede listar /home y escribir archivos." :
-        "Modo local. Solo chat y memoria persistente.";
-      // Live indicator
-      const live = this.els.live;
+      this.els.pcap.textContent = ArkCore.puter.available ? "FS y AI disponibles. Arkaios puede listar /home y escribir archivos." : "Modo local. Solo chat y memoria persistente.";
+
+      const live=this.els.live;
       if (live){
-        const aiOK = !!ArkCore.puter.ai;
+        const aiOK=!!ArkCore.puter.ai;
         live.classList.toggle('on', ArkCore.puter.available && aiOK);
         live.classList.toggle('off', !(ArkCore.puter.available && aiOK));
-        live.querySelector('.live-text').textContent = (ArkCore.puter.available && aiOK) ? 'ONLINE' : 'OFFLINE';
+        live.querySelector('.live-text').textContent=(ArkCore.puter.available&&aiOK)?'ONLINE':'OFFLINE';
       }
-      // Auto-load gallery when FS OK
-      if (ArkCore.puter.available && ArkCore.puter.fs){
-        loadGallery();
-      }
+      if (ArkCore.puter.available && ArkCore.puter.fs){ loadGallery(); }
       this.renderKV();
     },
 
     renderKV(){
-      const kv = this.els.kv;
-      const m = ArkCore.memory;
-      kv.innerHTML = "";
-      const rows = [
-        ["Versión", String(m.version)],
-        ["Notas", String(m.notes.length)],
-        ["Turnos", String(m.conversations.length)],
-        ["Rol", m.persona.slice(0,90) + (m.persona.length>90?"…":"")],
-      ];
-      for (const [k,v] of rows){
-        const kEl = document.createElement("div"); kEl.className="muted"; kEl.textContent = k;
-        const vEl = document.createElement("div"); vEl.textContent = v;
-        kv.appendChild(kEl); kv.appendChild(vEl);
-      }
+      const kv=this.els.kv, m=ArkCore.memory; kv.innerHTML="";
+      [["Versión",String(m.version)],["Notas",String(m.notes.length)],["Turnos",String(m.conversations.length)],["Rol",m.persona.slice(0,90)+(m.persona.length>90?"…":"")]]
+        .forEach(([k,v])=>{ const ke=document.createElement("div"); ke.className="muted"; ke.textContent=k; const ve=document.createElement("div"); ve.textContent=v; kv.appendChild(ke); kv.appendChild(ve); });
     },
 
-    system(text){ this._add("sys", text); },
-    log(text){ this.els.fslog.textContent = (this.els.fslog.textContent + "\n" + text).trim(); },
-    diag(text){ this.els.diaglog.textContent = (this.els.diaglog.textContent + "\n" + text).trim(); },
+    system(t){ this._add("sys", t); },
+    log(t){ this.els.fslog.textContent=(this.els.fslog.textContent+"\n"+t).trim(); },
+    diag(t){ this.els.diaglog.textContent=(this.els.diaglog.textContent+"\n"+t).trim(); },
 
-    _add(kind, text){
-      const el = document.createElement("div");
-      el.className = `msg ${kind}`;
-      el.textContent = text;
-      this.els.msgs.appendChild(el);
-      this.els.msgs.scrollTop = this.els.msgs.scrollHeight;
-    },
+    _add(kind,text){ const el=document.createElement("div"); el.className=`msg ${kind}`; el.textContent=text; this.els.msgs.appendChild(el); this.els.msgs.scrollTop=this.els.msgs.scrollHeight; },
 
     async send(){
-      const text = this.els.prompt.value.trim();
-      if (!text) return;
-      this._add("user", text);
-      this.els.prompt.value = "";
-      const model = this.els.model.value || MODEL_DEFAULT;
+      const text=this.els.prompt.value.trim(); if(!text) return;
+      this._add("user", text); this.els.prompt.value=""; const model=this.els.model.value||MODEL_DEFAULT;
 
-      // --- Comandos Arkaios ---
-      const t = text.toLowerCase();
-      if (t.startsWith("generar imagen ") || t.startsWith("crear imagen ") || t.startsWith("img:")){
-        const promptText = text.replace(/^generar imagen\s+|^crear imagen\s+|^img:\s*/i, "");
-        try{
-          await generateImage(promptText);
-          ArkCore.logTurn(text, "[imagen generada] " + promptText);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("txt2img error: " + (err?.message||String(err)));
-        }
+      const t=text.toLowerCase();
+      if (t.startsWith("generar imagen ")||t.startsWith("crear imagen ")||t.startsWith("img:")){
+        const p=text.replace(/^generar imagen\s+|^crear imagen\s+|^img:\s*/i,"");
+        try{ await generateImage(p); ArkCore.logTurn(text,"[imagen generada] "+p); }catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("txt2img error: "+(err?.message||String(err))); }
         return;
       }
-      // Analizar imagen por URL
       if (t.startsWith("analizar imagen ")){
-        const m = text.match(/^analizar imagen\s+(\S+)(?:\s+(.+))?$/i);
-        const url = m && m[1];
-        const question = m && m[2] ? m[2] : "Describe lo importante de la imagen.";
-        if (!url){ this._add("bot", "⚠ Debes indicar una URL válida"); return; }
-        try{
-          const resp = await analyzeImageURL(url, question, model);
-          this._add("bot", resp || "(sin respuesta)");
-          ArkCore.logTurn(text, resp);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("analyze error: " + (err?.message||String(err)));
-        }
+        const m=text.match(/^analizar imagen\s+(\S+)(?:\s+(.+))?$/i);
+        const url=m&&m[1], q=m&&m[2]?m[2]:"Describe lo importante de la imagen.";
+        if (!url){ this._add("bot","⚠ Debes indicar una URL válida"); return; }
+        try{ const r=await analyzeImageURL(url,q,model); this._add("bot", r||"(sin respuesta)"); ArkCore.logTurn(text,r); }
+        catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("analyze error: "+(err?.message||String(err))); }
         return;
       }
-
-      // Crear archivo <ruta> + contenido tras salto de línea
       if (t.startsWith("crear archivo ")){
-        const rest = text.replace(/^crear archivo\s+/i, "");
-        const [firstLine, ...restLines] = rest.split(/\r?\n/);
-        const path = firstLine.trim();
-        const content = restLines.join("\n");
-        if (!path){ this._add("bot", "⚠ Debes poner la ruta en la primera línea"); return; }
-        try{
-          await createFileAt(path, content);
-          this._add("bot", "Archivo creado en: " + path);
-          ArkCore.logTurn(text, "[archivo creado] " + path);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("crear archivo error: " + (err?.message||String(err)));
-        }
+        const rest=text.replace(/^crear archivo\s+/i,""); const [firstLine,...restLines]=rest.split(/\r?\n/);
+        const path=firstLine.trim(); const content=restLines.join("\n");
+        if (!path){ this._add("bot","⚠ Debes poner la ruta en la primera línea"); return; }
+        try{ await createFileAt(path,content); this._add("bot","Archivo creado en: "+path); ArkCore.logTurn(text,"[archivo creado] "+path); }
+        catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("crear archivo error: "+(err?.message||String(err))); }
         return;
       }
-
-      // Leer archivo
       if (t.startsWith("leer archivo ")){
-        const path = text.replace(/^leer archivo\s+/i, "").trim();
-        if (!path){ this._add("bot", "⚠ Indica la ruta del archivo"); return; }
-        try{
-          const data = await readFileAt(path);
-          this._add("bot", (typeof data === "string" ? data : JSON.stringify(data)));
-          ArkCore.logTurn(text, "[archivo leído] " + path);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("leer archivo error: " + (err?.message||String(err)));
-        }
+        const path=text.replace(/^leer archivo\s+/i,"").trim();
+        if (!path){ this._add("bot","⚠ Indica la ruta del archivo"); return; }
+        try{ const data=await readFileAt(path); this._add("bot", (typeof data==="string")?data:JSON.stringify(data)); ArkCore.logTurn(text,"[archivo leído] "+path); }
+        catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("leer archivo error: "+(err?.message||String(err))); }
         return;
       }
-
-      // Listar
       if (t.startsWith("listar ")){
-        const path = text.replace(/^listar\s+/i, "").trim() || "/home";
-        try{
-          const listing = await listPath(path);
-          this._add("bot", listing || "(vacío)");
-          ArkCore.logTurn(text, "[listar] " + path);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("listar error: " + (err?.message||String(err)));
-        }
+        const path=text.replace(/^listar\s+/i,"").trim()||"/home";
+        try{ const listing=await listPath(path); this._add("bot",listing||"(vacío)"); ArkCore.logTurn(text,"[listar] "+path); }
+        catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("listar error: "+(err?.message||String(err))); }
         return;
       }
-
-      // Descomprimir .zip/.rar
       if (t.startsWith("descomprimir ")){
-        const path = text.replace(/^descomprimir\s+/i, "").trim();
-        if (!path){ this._add("bot", "⚠ Indica el archivo .zip o .rar a descomprimir"); return; }
-        try{
-          const info = await unzipAt(path);
-          const summary = `Descomprimido (${info.type}): ${info.count} archivos\n` + (info.files||[]).join("\\n");
-          this._add("bot", summary);
-          ArkCore.logTurn(text, "[descomprimir] " + path);
-        }catch(err){
-          this._add("bot", "⚠ " + (err?.message||String(err)));
-          this.diag("descomprimir error: " + (err?.message||String(err)));
-        }
+        const path=text.replace(/^descomprimir\s+/i,"").trim();
+        if (!path){ this._add("bot","⚠ Indica el archivo .zip o .rar a descomprimir"); return; }
+        try{ const info=await unzipAt(path); const summary=`Descomprimido (${info.type}): ${info.count} archivos\n`+(info.files||[]).join("\n"); this._add("bot", summary); ArkCore.logTurn(text,"[descomprimir] "+path); }
+        catch(err){ this._add("bot","⚠ "+(err?.message||String(err))); this.diag("descomprimir error: "+(err?.message||String(err))); }
         return;
       }
 
       try{
-        const out = await ArkCore.chat(model, text);
-        this._add("bot", out || "(sin respuesta)");
-        ArkCore.logTurn(text, out);
-      }catch(e){
-        this._add("bot", "⚠ " + e.message);
-        this.diag("Send error: " + (e?.message||e));
-      }
+        const out=await ArkCore.chat(model, text);
+        this._add("bot", out||"(sin respuesta)"); ArkCore.logTurn(text,out);
+      }catch(e){ this._add("bot","⚠ "+e.message); this.diag("Send error: "+(e?.message||e)); }
     }
   };
 
-  window.addEventListener("DOMContentLoaded", () => {
-    ui.init();
-    ArkCore.init();
-    ui.refreshStatus();
+  /* ---------- Boot ---------- */
+  window.addEventListener("DOMContentLoaded", ()=>{
+    ui.init(); ArkCore.init(); ui.refreshStatus();
   });
 })();
 </script>
