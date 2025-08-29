@@ -1,63 +1,45 @@
 @echo off
 chcp 65001 >nul
-title Arkaios AI Server Launcher
-color 0B
-
+echo.
 echo ========================================
-echo      ARKAIOS AI SERVER LAUNCHER
+echo    ARKAIOS - Laboratorio Puter + ChatGPT
 echo ========================================
 echo.
 
-:menu
-echo Selecciona el servidor a iniciar:
-echo.
-echo   [1] Gemini Server (magic.html)
-echo   [2] Claude Server (index.html) 
-echo   [3] Salir
-echo.
-set /p choice="Elige una opción (1-3): "
+REM Verificar si Python está instalado
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Python no está instalado o no está en el PATH
+    echo Instala Python desde: https://www.python.org/downloads/
+    pause
+    exit /b 1
+)
 
-if "%choice%"=="1" goto gemini
-if "%choice%"=="2" goto claude
-if "%choice%"=="3" goto exit
-echo Opción inválida. Por favor elige 1, 2 o 3.
+REM Verificar si pip está instalado
+pip --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: pip no está instalado
+    echo Instala pip o verifica la instalación de Python
+    pause
+    exit /b 1
+)
+
+REM Verificar dependencias
+echo Verificando dependencias...
+pip install flask requests >nul 2>&1
+
 echo.
-goto menu
-
-:gemini
+echo Iniciando servidor ARKAIOS...
+echo Servidor: http://127.0.0.1:5000
+echo Presiona Ctrl+C para detener
 echo.
-echo Iniciando servidor Gemini...
-echo Servidor: server_gemini_merged_root.py
-echo Frontend: magic.html
-echo Puerto: 8000
-echo URL: http://127.0.0.1:8000
-echo.
-timeout /t 2 /nobreak >nul
 
-start "" "http://127.0.0.1:8000"
-python server_gemini_merged_root.py
+REM Ejecutar el servidor
+python server_arkaios.py
 
-pause
-goto menu
-
-:claude
-echo.
-echo Iniciando servidor Claude...
-echo Servidor: server_claude_puter.py  
-echo Frontend: index.html (con Puter.js)
-echo Puerto: 8000
-echo URL: http://127.0.0.1:8000
-echo.
-timeout /t 2 /nobreak >nul
-
-start "" "http://127.0.0.1:8000"
-python server_claude_puter.py
-
-pause
-goto menu
-
-:exit
-echo.
-echo Saliendo del launcher...
-timeout /t 2 /nobreak >nul
-exit
+if errorlevel 1 (
+    echo.
+    echo ERROR: No se pudo iniciar el servidor
+    echo Verifica que server_arkaios.py esté en la misma carpeta
+    pause
+)
