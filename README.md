@@ -59,7 +59,7 @@ Descarga la APK optimizada:
 
 ### 🌐 Versión Web
 Accede directamente desde tu navegador:
-[**Acceder a ARKAIOS Web**](http://bit.ly/4oX83x8)
+[**Acceder a ARKAIOS Web**](http://bit.ly/4oZreGL)
 
 ## 🏗️ Arquitectura del Sistema
 
