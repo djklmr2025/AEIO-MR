@@ -55,7 +55,7 @@ ARKAIOS es un núcleo de IA que actúa como:
 
 ### 📱 Aplicación Android
 Descarga la APK optimizada:
-[**Descargar Android**](http://bit.ly/4mFPEDN)
+[**Descargar Android**](http://bit.ly/4g2n8JN)
 
 ### 🌐 Versión Web
 Accede directamente desde tu navegador:
