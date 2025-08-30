@@ -1,8 +1,10 @@
 # AEIO-MR (ARKAIOS)
 
-Descarga Nuestra App para Android desde Aqui: bit.ly/4mFPEDN 
-Donaciones y Aportaciones en agradecimiento al proyecto clic aqui: bit.ly/4lUL9nj 
-soporte, ayuda comentarios o dudas a este correo: djklmr@hotmail.com
+**Descarga Nuestra App para Android desde Aqui:** [bit.ly/4mFPEDN](http://bit.ly/4mFPEDN)
+
+**Donaciones y Aportaciones en agradecimiento al proyecto:** [bit.ly/4lUL9nj](http://bit.ly/4lUL9nj)
+
+**Soporte, ayuda comentarios o dudas:** djklmr@hotmail.com
 
 ![Project Status](https://img.shields.io/badge/status-active-brightgreen.svg)
 ![Platform](https://img.shields.io/badge/platform-Android%20%7C%20Web-blue.svg)
@@ -20,7 +22,7 @@ ARKAIOS es un núcleo de IA que actúa como:
 - **Operador del Sistema**: Gestión completa del entorno Puter
 - **Creativo-Diseñador**: Generación de contenido e imágenes
 
-## �?Características Principales
+## ✨ Características Principales
 
 ### 🤖 Inteligencia Artificial Híbrida
 - **GPT-4o**: Modelo principal para conversaciones y análisis
@@ -28,7 +30,7 @@ ARKAIOS es un núcleo de IA que actúa como:
 - **Memoria persistente**: Sistema de registro y recuperación de contexto
 - **Múltiples roles**: Personalidades especializadas según la tarea
 
-### 🖥�?Integración Puter OS
+### 🖥️ Integración Puter OS
 - **Sistema de archivos completo**: Lectura, escritura y gestión de `/home`
 - **Subida de archivos**: Drag & drop, clipboard, selección manual
 - **Descompresión**: Soporte para ZIP/RAR automático
@@ -59,7 +61,7 @@ Descarga la APK optimizada:
 Accede directamente desde tu navegador:
 [**Acceder a ARKAIOS Web**](http://bit.ly/3Vw1MLj)
 
-## 🏗�?Arquitectura del Sistema
+## 🏗️ Arquitectura del Sistema
 
 ### Componentes Principales
 ```
@@ -81,7 +83,7 @@ ARKAIOS/
 - **Storage**: Sistema de archivos virtualizado
 - **Persistencia**: JSON + JSONL logging
 
-## 🛠�?Instalación y Uso
+## 🛠️ Instalación y Uso
 
 ### Instalación Local (Desarrollo)
 
@@ -147,11 +149,11 @@ http://127.0.0.1:5000/
 
 ## 📊 Estado del Proyecto
 
-- �?**Core IA**: GPT-4o integrado y funcional
-- �?**Puter OS**: Sistema de archivos completo
-- �?**Multimedia**: Soporte para imágenes y documentos
-- �?**Memoria**: Persistencia local y exportación
-- �?**Mobile**: APK Android optimizada
+- ✅ **Core IA**: GPT-4o integrado y funcional
+- ✅ **Puter OS**: Sistema de archivos completo
+- ✅ **Multimedia**: Soporte para imágenes y documentos
+- ✅ **Memoria**: Persistencia local y exportación
+- ✅ **Mobile**: APK Android optimizada
 - 🔄 **Claude**: Integración en desarrollo
 - 🔄 **APIs**: Expansión de endpoints
 
@@ -180,6 +182,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 **djklmr2025**
 - GitHub: [@djklmr2025](https://github.com/djklmr2025)
+- Email: djklmr@hotmail.com
 
 ## 🙏 Agradecimientos
 
@@ -195,6 +198,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 - Abre un issue en este repositorio
 - Incluye logs del sistema (`/api/log`)
 - Especifica versión (Android/Web)
+- Contacto directo: djklmr@hotmail.com
 
 ### Documentación
 - **Comandos**: Escribe `ayuda` en el chat
@@ -217,7 +221,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ---
 
-�?**Si ARKAIOS te resulta útil, dale una estrella al repositorio**
+⭐ **Si ARKAIOS te resulta útil, dale una estrella al repositorio**
 
 🚀 **ARKAIOS está listo para usar Puter + GPT-4o + Claude**
 
