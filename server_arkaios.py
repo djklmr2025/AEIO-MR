@@ -1,4 +1,4 @@
-# server_arkaios.py (daemon + persistent logging)
+# server_arkaios.py — ARKAIOS server (logging persistente + tareas + daemon)
 from flask import Flask, send_from_directory, jsonify, request
 from pathlib import Path
 from threading import Thread, Event
@@ -19,6 +19,7 @@ MEM_DIR.mkdir(parents=True, exist_ok=True)
 LOG_PATH = MEM_DIR / "arkaios_log.jsonl"
 SESSION_PATH = MEM_DIR / "arkaios_session_last.json"
 TASKS_PATH = MEM_DIR / "tasks.json"
+DOCS_PATH = MEM_DIR / "docs.html"  # opcional: carta de habilidades embebida
 
 app = Flask(__name__, static_folder=str(STATIC_DIR), static_url_path="")
 
@@ -72,7 +73,8 @@ def get_tasks():
         if TASKS_PATH.exists():
             data = json.loads(TASKS_PATH.read_text(encoding="utf-8") or '{"tasks":[]}')
         else:
-            data = {"tasks": []}
+            data = {"tasks": [{"id":"demo-hello","title":"Tarea demo","seen":False,"created_at":datetime.utcnow().isoformat()+"Z"}]}
+            TASKS_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         return jsonify({"ok": True, **data})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -87,37 +89,58 @@ def post_tasks():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
-# Very small background loop
+# --- Docs embebida (opcional) ---
+@app.get("/docs")
+def docs():
+    try:
+        if DOCS_PATH.exists():
+            return DOCS_PATH.read_text(encoding="utf-8")
+        html = """<!doctype html><meta charset="utf-8"><title>ARKAIOS Docs</title>
+        <style>body{font-family:system-ui;max-width:900px;margin:2rem auto;padding:0 1rem;color:#0f172a}
+        code{background:#f1f5f9;padding:.1rem .3rem;border-radius:6px}</style>
+        <h1>ARKAIOS — Carta de habilidades</h1>
+        <ul>
+          <li><b>img: &lt;prompt&gt;</b> → texto-a-imagen si hay puente; guarda en <code>/home</code>.</li>
+          <li><b>analizar imagen &lt;n|url&gt;</b> → si hay visión, la usa; si no, conserva adjuntos.</li>
+          <li><b>listar &lt;ruta&gt;</b> (por defecto <code>/home</code>)</li>
+          <li><b>descomprimir &lt;archivo.zip&gt;</b> → extrae a <code>/home</code>.</li>
+          <li><b>crear archivo &lt;ruta&gt;: &lt;contenido&gt;</b> / <b>leer archivo &lt;ruta&gt;</b></li>
+        </ul>"""
+        DOCS_PATH.write_text(html, encoding="utf-8")
+        return html
+    except Exception as e:
+        return f"Error generando docs: {e}", 500
+
+# --- Daemon de latido ---
 stop_event = Event()
 def daemon_loop():
-    HB = MEM_DIR / "daemon_heartbeat.txt"
+    hb_file = MEM_DIR / "daemon_heartbeat.txt"
     while not stop_event.is_set():
-        # heartbeat
-        HB.write_text(datetime.utcnow().isoformat() + "Z", encoding="utf-8")
-        # tasks
         try:
+            hb_file.write_text(datetime.utcnow().isoformat()+"Z", encoding="utf-8")
+            # marcar tareas nuevas como 'seen' la primera vez que el daemon las toca
             if TASKS_PATH.exists():
                 obj = json.loads(TASKS_PATH.read_text(encoding="utf-8") or "{}")
                 changed = False
                 for t in obj.get("tasks", []):
                     if not t.get("seen"):
                         t["seen"] = True
-                        t["seen_at"] = datetime.utcnow().isoformat() + "Z"
+                        t["seen_at"] = datetime.utcnow().isoformat()+"Z"
                         changed = True
                 if changed:
                     TASKS_PATH.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
         except Exception:
             pass
-        stop_event.wait(30)  # cada 30s
+        time.sleep(3)
 
-daemon_thread = Thread(target=daemon_loop, daemon=True)
-daemon_thread.start()
+daemon_thr = Thread(target=daemon_loop, daemon=True)
+daemon_thr.start()
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
-    print(f"🚀 ARKAIOS server on http://127.0.0.1:{port}  (mem: {MEM_DIR})")
+    print("🚀 Servidor ARKAIOS iniciando…")
+    print("🧠 Memory dir:", MEM_DIR)
+    print("🌐 http://127.0.0.1:5000/")
     try:
-        app.run(host="127.0.0.1", port=port, debug=True)
+        app.run(host="127.0.0.1", port=5000, debug=True)
     finally:
-        stop_event.set()
-        daemon_thread.join(timeout=2)
+        stop_event.set(); daemon_thr.join(timeout=2)
