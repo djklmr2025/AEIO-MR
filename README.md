@@ -1,7 +1,6 @@
 # AEIO-MR (ARKAIOS)
 
-**Descarga Nuestra App para Android desde Aqui:** [bit.ly/4mFPEDN](http://bit.ly/4mFPEDN)
-
+**Descarga Nuestra App para Android desde Aqui:** 
 **Donaciones y Aportaciones en agradecimiento al proyecto:** [bit.ly/4lUL9nj](http://bit.ly/4lUL9nj)
 
 **Soporte, ayuda comentarios o dudas:** djklmr@hotmail.com
