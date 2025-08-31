@@ -4,7 +4,7 @@
 
 **Prueba la App en modo web desde aqui: http://bit.ly/4n9shlL **
 
-**Donaciones y Aportaciones en agradecimiento al proyecto:** [bit.ly/4lUL9nj](http://bit.ly/4lUL9nj)
+**Donaciones y Aportaciones en agradecimiento al proyecto:** (https://www.paypal.com/ncp/payment/MEZMLZEKS7HWL))
 
 **Soporte, ayuda comentarios o dudas:** djklmr@hotmail.com
 
