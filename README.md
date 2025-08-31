@@ -6,13 +6,6 @@
 
 **Donaciones y Aportaciones en agradecimiento al proyecto:** [bit.ly/4lUL9nj](http://bit.ly/4lUL9nj)
 
-<div id="paypal-container-MEZMLZEKS7HWL"></div>
-<script>
-  paypal.HostedButtons({
-    hostedButtonId: "MEZMLZEKS7HWL",
-  }).render("#paypal-container-MEZMLZEKS7HWL")
-</script>
-
 **Soporte, ayuda comentarios o dudas:** djklmr@hotmail.com
 
 ![Project Status](https://img.shields.io/badge/status-active-brightgreen.svg)
