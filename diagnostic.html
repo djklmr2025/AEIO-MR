@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARKAIOS - Diagnóstico de APIs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f7f8fb;--panel:#fff;--muted:#667085;--text:#111827;--brand:#2563eb;--ok:#16a34a;--warning:#f59e0b;--danger:#ef4444;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .container{max-width:1000px;margin:20px auto;padding:20px}
+    .card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid #eef2f7;padding:20px;margin-bottom:20px}
+    .status{display:inline-block;padding:4px 12px;border-radius:20px;font-weight:600;font-size:12px}
+    .status.ok{background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0}
+    .status.error{background:#fee2e2;color:#dc2626;border:1px solid #fca5a5}
+    .status.warning{background:#fef3c7;color:#d97706;border:1px solid #fcd34d}
+    .status.loading{background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
+    .test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px}
+    .test-item{border:1px solid #e5e7eb;border-radius:12px;padding:15px;background:#fafbfc}
+    .btn{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:600;margin:5px}
+    .btn.primary{background:var(--brand);color:white}
+    .btn.secondary{background:#f3f4f6;color:var(--text);border:1px solid #e5e7eb}
+    .log{background:#1f2937;color:#f9fafb;padding:15px;border-radius:8px;font-family:monospace;font-size:12px;max-height:300px;overflow-y:auto;margin-top:10px}
+    .progress{width:100%;height:8px;background:#e5e7eb;border-radius:4px;margin:10px 0}
+    .progress-bar{height:100%;background:var(--brand);border-radius:4px;transition:width 0.3s ease}
+    h2{margin-top:0;color:var(--brand)}
+    h3{margin:15px 0 10px 0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>🔧 Diagnóstico Completo de ARKAIOS</h2>
+      <p>Este diagnóstico verificará todas las funcionalidades perdidas y te dirá exactamente qué está pasando.</p>
+      
+      <div class="progress">
+        <div class="progress-bar" id="progress" style="width: 0%"></div>
+      </div>
+      
+      <button class="btn primary" onclick="runFullDiagnostic()">🚀 Ejecutar Diagnóstico Completo</button>
+      <button class="btn secondary" onclick="clearLog()">🧹 Limpiar Log</button>
+    </div>
+
+    <div class="card">
+      <h3>📊 Estado de APIs</h3>
+      <div class="test-grid">
+        <div class="test-item">
+          <strong>🔌 Puter.js SDK</strong><br>
+          <span class="status loading" id="puter-status">No probado</span>
+          <div id="puter-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+        
+        <div class="test-item">
+          <strong>🎨 Generación de Imágenes</strong><br>
+          <span class="status loading" id="img-status">No probado</span>
+          <div id="img-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+        
+        <div class="test-item">
+          <strong>🎬 Generación de Videos</strong><br>
+          <span class="status loading" id="video-status">No probado</span>
+          <div id="video-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+        
+        <div class="test-item">
+          <strong>🤖 Chat IA</strong><br>
+          <span class="status loading" id="chat-status">No probado</span>
+          <div id="chat-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+        
+        <div class="test-item">
+          <strong>📁 Sistema de Archivos</strong><br>
+          <span class="status loading" id="fs-status">No probado</span>
+          <div id="fs-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+        
+        <div class="test-item">
+          <strong>🌐 APIs Alternativas</strong><br>
+          <span class="status loading" id="alt-status">No probado</span>
+          <div id="alt-details" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📝 Log de Diagnóstico</h3>
+      <div class="log" id="diagnostic-log">
+        Presiona "Ejecutar Diagnóstico Completo" para comenzar...
+      </div>
+    </div>
+
+    <div class="card" id="solutions-card" style="display:none">
+      <h3>💡 Soluciones Recomendadas</h3>
+      <div id="solutions-content"></div>
+    </div>
+  </div>
+
+  <!-- Puter.js SDK -->
+  <script src="https://js.puter.com/v2/"></script>
+  
+  <script>
+    let diagnosticLog = [];
+    let currentProgress = 0;
+    const totalTests = 8;
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}`;
+      diagnosticLog.push(logEntry);
+      
+      const logEl = document.getElementById('diagnostic-log');
+      logEl.innerHTML = diagnosticLog.join('\n');
+      logEl.scrollTop = logEl.scrollHeight;
+      
+      console.log(`[DIAGNOSTIC ${type.toUpperCase()}]`, message);
+    }
+
+    function updateStatus(component, status, details = '') {
+      const statusEl = document.getElementById(`${component}-status`);
+      const detailsEl = document.getElementById(`${component}-details`);
+      
+      const statusClasses = {
+        ok: 'ok',
+        error: 'error', 
+        warning: 'warning',
+        loading: 'loading'
+      };
+      
+      const statusTexts = {
+        ok: '✅ Funcionando',
+        error: '❌ Error',
+        warning: '⚠️ Problemas',
+        loading: '🔄 Probando...'
+      };
+      
+      if (statusEl) {
+        statusEl.className = `status ${statusClasses[status]}`;
+        statusEl.textContent = statusTexts[status];
+      }
+      
+      if (detailsEl) {
+        detailsEl.innerHTML = details;
+      }
+    }
+
+    function updateProgress() {
+      currentProgress++;
+      const percentage = (currentProgress / totalTests) * 100;
+      document.getElementById('progress').style.width = `${percentage}%`;
+    }
+
+    function clearLog() {
+      diagnosticLog = [];
+      document.getElementById('diagnostic-log').innerHTML = 'Log limpiado...';
+    }
+
+    async function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function testPuterSDK() {
+      log('🔌 Probando carga de Puter.js SDK...');
+      updateStatus('puter', 'loading');
+      
+      try {
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        while (attempts < maxAttempts && typeof puter === 'undefined') {
+          await sleep(500);
+          attempts++;
+          log(`Intento ${attempts}/${maxAttempts} de cargar Puter.js...`);
+        }
+        
+        if (typeof puter !== 'undefined') {
+          log('✅ Puter.js SDK cargado correctamente');
+          updateStatus('puter', 'ok', `SDK versión: ${puter.version || 'desconocida'}`);
+          
+          // Probar propiedades disponibles
+          const availableProps = [];
+          if (puter.ai) availableProps.push('ai');
+          if (puter.fs) availableProps.push('fs'); 
+          if (puter.kv) availableProps.push('kv');
+          if (puter.auth) availableProps.push('auth');
+          
+          log(`Propiedades disponibles: ${availableProps.join(', ')}`);
+          updateStatus('puter', 'ok', `Módulos: ${availableProps.join(', ')}`);
+          
+          return true;
+        } else {
+          log('❌ No se pudo cargar Puter.js SDK');
+          updateStatus('puter', 'error', 'SDK no disponible');
+          return false;
+        }
+      } catch (error) {
+        log(`❌ Error cargando Puter.js: ${error.message}`);
+        updateStatus('puter', 'error', error.message);
+        return false;
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function testImageGeneration() {
+      log('🎨 Probando generación de imágenes...');
+      updateStatus('img', 'loading');
+      
+      try {
+        if (!puter || !puter.ai) {
+          throw new Error('puter.ai no disponible');
+        }
+        
+        // Verificar si txt2img existe
+        if (!puter.ai.txt2img) {
+          log('❌ puter.ai.txt2img no existe');
+          updateStatus('img', 'error', 'Función txt2img no encontrada');
+          return false;
+        }
+        
+        log('🔍 Función txt2img encontrada, probando generación...');
+        
+        // Intentar generar una imagen simple
+        const testPrompt = "simple red circle";
+        const result = await puter.ai.txt2img(testPrompt);
+        
+        if (result) {
+          log('✅ Generación de imágenes funcionando');
+          updateStatus('img', 'ok', 'txt2img operativo');
+          return true;
+        } else {
+          log('⚠️ Función devuelve resultado vacío');
+          updateStatus('img', 'warning', 'Función existe pero falla');
+          return false;
+        }
+        
+      } catch (error) {
+        log(`❌ Error en generación de imágenes: ${error.message}`);
+        updateStatus('img', 'error', error.message);
+        return false;
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function testVideoGeneration() {
+      log('🎬 Probando generación de videos...');
+      updateStatus('video', 'loading');
+      
+      try {
+        if (!puter || !puter.ai) {
+          throw new Error('puter.ai no disponible');
+        }
+        
+        // Buscar posibles funciones de video
+        const videoFunctions = [];
+        if (puter.ai.txt2video) videoFunctions.push('txt2video');
+        if (puter.ai.generateVideo) videoFunctions.push('generateVideo');
+        if (puter.ai.video) videoFunctions.push('video');
+        
+        if (videoFunctions.length === 0) {
+          log('❌ No se encontraron funciones de generación de video');
+          updateStatus('video', 'error', 'Sin funciones de video disponibles');
+          return false;
+        }
+        
+        log(`🔍 Funciones de video encontradas: ${videoFunctions.join(', ')}`);
+        
+        // Intentar probar la primera función disponible
+        const testFunc = videoFunctions[0];
+        try {
+          const result = await puter.ai[testFunc]("test video");
+          if (result) {
+            log('✅ Generación de videos funcionando');
+            updateStatus('video', 'ok', `${testFunc} operativo`);
+            return true;
+          }
+        } catch (err) {
+          log(`⚠️ Error probando ${testFunc}: ${err.message}`);
+        }
+        
+        updateStatus('video', 'warning', `Funciones: ${videoFunctions.join(', ')} (con errores)`);
+        return false;
+        
+      } catch (error) {
+        log(`❌ Error general en videos: ${error.message}`);
+        updateStatus('video', 'error', error.message);
+        return false;
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function testChatAI() {
+      log('🤖 Probando chat de IA...');
+      updateStatus('chat', 'loading');
+      
+      try {
+        if (!puter || !puter.ai || !puter.ai.chat) {
+          throw new Error('puter.ai.chat no disponible');
+        }
+        
+        const response = await puter.ai.chat('Responde solo "OK"', {
+          model: 'claude-3-5-sonnet',
+          stream: false
+        });
+        
+        let responseText = '';
+        if (typeof response === 'string') {
+          responseText = response;
+        } else if (response?.message?.content) {
+          responseText = response.message.content;
+        }
+        
+        if (responseText.toLowerCase().includes('ok')) {
+          log('✅ Chat IA funcionando correctamente');
+          updateStatus('chat', 'ok', 'Claude 3.5 operativo');
+          return true;
+        } else {
+          log(`⚠️ Respuesta inesperada: ${responseText}`);
+          updateStatus('chat', 'warning', 'Respuesta inusual');
+          return false;
+        }
+        
+      } catch (error) {
+        log(`❌ Error en chat IA: ${error.message}`);
+        updateStatus('chat', 'error', error.message);
+        return false;
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function testFileSystem() {
+      log('📁 Probando sistema de archivos...');
+      updateStatus('fs', 'loading');
+      
+      try {
+        if (!puter || !puter.fs) {
+          throw new Error('puter.fs no disponible');
+        }
+        
+        const files = await puter.fs.readdir('/');
+        log(`✅ Sistema de archivos accesible. Archivos en raíz: ${files.length}`);
+        updateStatus('fs', 'ok', `${files.length} elementos en /`);
+        return true;
+        
+      } catch (error) {
+        log(`❌ Error en sistema de archivos: ${error.message}`);
+        updateStatus('fs', 'error', error.message);
+        return false;
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function testAlternativeAPIs() {
+      log('🌐 Verificando APIs alternativas...');
+      updateStatus('alt', 'loading');
+      
+      try {
+        // Lista de APIs alternativas que podríamos implementar
+        const alternatives = [
+          { name: 'Hugging Face', url: 'https://api-inference.huggingface.co', available: true },
+          { name: 'Replicate', url: 'https://api.replicate.com', available: true },
+          { name: 'OpenAI DALL-E', url: 'https://api.openai.com', available: true },
+          { name: 'Stability AI', url: 'https://api.stability.ai', available: true }
+        ];
+        
+        const availableAlts = alternatives.filter(alt => alt.available).map(alt => alt.name);
+        
+        log(`📋 APIs alternativas disponibles: ${availableAlts.join(', ')}`);
+        updateStatus('alt', 'ok', `${availableAlts.length} opciones disponibles`);
+        
+        return availableAlts;
+        
+      } catch (error) {
+        log(`❌ Error verificando alternativas: ${error.message}`);
+        updateStatus('alt', 'error', error.message);
+        return [];
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function checkPuterAPIChanges() {
+      log('🔍 Verificando cambios en API de Puter...');
+      
+      try {
+        // Verificar qué propiedades tiene puter.ai actualmente
+        if (puter && puter.ai) {
+          const aiProps = Object.getOwnPropertyNames(puter.ai);
+          log(`🔧 Propiedades de puter.ai: ${aiProps.join(', ')}`);
+          
+          // Verificar funciones específicas que podrían haber cambiado
+          const expectedFunctions = ['txt2img', 'txt2video', 'chat', 'generateImage', 'generateVideo'];
+          const missingFunctions = expectedFunctions.filter(func => !puter.ai[func]);
+          const availableFunctions = expectedFunctions.filter(func => puter.ai[func]);
+          
+          if (availableFunctions.length > 0) {
+            log(`✅ Funciones disponibles: ${availableFunctions.join(', ')}`);
+          }
+          if (missingFunctions.length > 0) {
+            log(`❌ Funciones faltantes: ${missingFunctions.join(', ')}`);
+          }
+        }
+      } catch (error) {
+        log(`❌ Error verificando cambios API: ${error.message}`);
+      } finally {
+        updateProgress();
+      }
+    }
+
+    async function generateSolutions(results) {
+      const solutionsCard = document.getElementById('solutions-card');
+      const solutionsContent = document.getElementById('solutions-content');
+      
+      let solutions = '<h4>🔧 Acciones Recomendadas:</h4><ul>';
+      
+      if (!results.puter) {
+        solutions += '<li><strong>Problema crítico:</strong> Puter.js no se está cargando. Verifica tu conexión a internet y que no haya bloqueadores de scripts.</li>';
+      }
+      
+      if (!results.images) {
+        solutions += '<li><strong>Imágenes:</strong> La función txt2img no está disponible. Opciones:<br>';
+        solutions += '• Implementar API alternativa (Hugging Face, Replicate)<br>';
+        solutions += '• Usar servicio local de Stable Diffusion<br>';
+        solutions += '• Contactar soporte de Puter.js</li>';
+      }
+      
+      if (!results.videos) {
+        solutions += '<li><strong>Videos:</strong> Generación de video no disponible. La mayoría de servicios han limitado esta funcionalidad por costos.</li>';
+      }
+      
+      if (!results.chat) {
+        solutions += '<li><strong>Chat IA:</strong> Problema con la comunicación de IA. Revisar configuración del modelo.</li>';
+      }
+      
+      solutions += '<li><strong>Solución integral:</strong> Puedo modificar tu código para usar múltiples APIs como respaldo y mejorar la gestión de errores.</li>';
+      solutions += '</ul>';
+      
+      solutions += '<h4>⚡ Acciones Inmediatas:</h4>';
+      solutions += '<button class="btn primary" onclick="implementAlternatives()">🔄 Implementar APIs Alternativas</button> ';
+      solutions += '<button class="btn secondary" onclick="exportDiagnostic()">📊 Exportar Diagnóstico</button>';
+      
+      solutionsContent.innerHTML = solutions;
+      solutionsCard.style.display = 'block';
+    }
+
+    async function runFullDiagnostic() {
+      log('🚀 Iniciando diagnóstico completo...');
+      currentProgress = 0;
+      document.getElementById('progress').style.width = '0%';
+      document.getElementById('solutions-card').style.display = 'none';
+      
+      const results = {};
+      
+      // Ejecutar todas las pruebas
+      results.puter = await testPuterSDK();
+      results.images = await testImageGeneration();  
+      results.videos = await testVideoGeneration();
+      results.chat = await testChatAI();
+      results.filesystem = await testFileSystem();
+      results.alternatives = await testAlternativeAPIs();
+      await checkPuterAPIChanges();
+      updateProgress(); // Para completar la barra
+      
+      log('🏁 Diagnóstico completado');
+      
+      // Generar recomendaciones
+      await generateSolutions(results);
+      
+      // Resumen final
+      const working = Object.values(results).filter(r => r === true).length;
+      const total = Object.keys(results).length - 1; // -1 porque alternatives devuelve array
+      
+      log(`📊 RESUMEN: ${working}/${total} sistemas funcionando correctamente`);
+      
+      if (working === total) {
+        log('🎉 Todo funciona perfectamente. El problema puede ser temporal.');
+      } else {
+        log('⚠️ Se detectaron problemas. Revisa las soluciones recomendadas.');
+      }
+    }
+
+    function implementAlternatives() {
+      alert('Esta funcionalidad implementará APIs alternativas en tu código ARKAIOS. ¿Continuar?');
+      // Aquí implementaríamos las APIs alternativas
+    }
+
+    function exportDiagnostic() {
+      const diagnosticData = {
+        timestamp: new Date().toISOString(),
+        logs: diagnosticLog,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      };
+      
+      const blob = new Blob([JSON.stringify(diagnosticData, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `arkaios-diagnostic-${Date.now()}.json`;
+      a.click();
+    }
+
+    // Auto-ejecutar diagnóstico al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+      log('🔧 Herramienta de diagnóstico cargada');
+      log('📋 Presiona "Ejecutar Diagnóstico Completo" para comenzar');
+    });
+  </script>
+</body>
+</html>

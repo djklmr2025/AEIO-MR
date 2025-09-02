@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARKAIOS - IA Integrada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f7f8fb;--panel:#fff;--muted:#667085;--text:#111827;--brand:#2563eb;--ok:#16a34a;--warning:#f59e0b;--danger:#ef4444;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .app{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:18px;max-width:1200px;margin:24px auto}
+    .chat{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid #eef2f7;display:flex;flex-direction:column;min-height:70vh}
+    .chat-header{padding:14px 16px;border-bottom:1px solid #eef2f7;display:flex;align-items:center;gap:10px}
+    .status-dot{width:10px;height:10px;border-radius:50%}
+    .status-dot.online{background:var(--ok)}
+    .status-dot.offline{background:var(--danger)}
+    .status-dot.connecting{background:var(--warning)}
+    .title{font-weight:700}
+    .chip{display:inline-grid;place-items:center;padding:6px 10px;border-radius:99px;background:#f1f5ff;color:#1d4ed8;font-weight:600;font-size:12px;border:1px solid #e6ecff}
+    .chip.connecting{background:#fef3c7;color:#d97706;border-color:#fcd34d}
+    .chip.error{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+    .chip.success{background:#dcfce7;color:#16a34a;border-color:#bbf7d0}
+    .feed{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:90%;padding:12px 14px;border-radius:14px;box-shadow:0 2px 8px rgba(15,23,42,.06);line-height:1.4;opacity:0;animation:fadeIn .3s forwards}
+    .msg.ai{background:#f1f5ff;border:1px solid #e6ecff}
+    .msg.me{background:#f7f7f9;border:1px solid #eceef3;margin-left:auto}
+    .msg.system{background:#fef3c7;border:1px solid #fcd34d;text-align:center}
+    .composer{display:flex;gap:10px;padding:12px;border-top:1px solid #eef2f7}
+    .composer textarea{flex:1;resize:none;height:48px;padding:12px;border-radius:12px;border:1px solid #e5e7eb}
+    .composer button{padding:12px 16px;border:none;border-radius:12px;cursor:pointer;font-weight:600}
+    .composer button.primary{background:var(--brand);color:white}
+    .composer button.secondary{background:#f3f4f6;color:var(--text);border:1px solid #e5e7eb}
+    .composer button:disabled{opacity:0.5;cursor:not-allowed}
+    .side{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid #eef2f7;padding:14px}
+    .side h3{margin:4px 0 10px}
+    .gallery{display:grid;gap:10px}
+    .gal-item{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;padding:8px;border:1px solid #eef2f7;border-radius:12px}
+    .gal-item img{width:48px;height:48px;object-fit:cover;border-radius:10px}
+    .model-selector{padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:white;font-size:12px}
+    .attachment-preview{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    .attachment-item{position:relative;border:1px solid #e5e7eb;border-radius:8px;padding:4px;background:white}
+    .attachment-item img{max-width:80px;max-height:80px;object-fit:cover;border-radius:4px}
+    .attachment-remove{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:white;border:none;font-size:12px;cursor:pointer}
+    .logout{margin-left:auto}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @media (max-width:980px){.app{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <section class="app">
+    <div class="chat">
+      <div class="chat-header">
+        <span class="status-dot connecting" id="status-dot"></span>
+        <span class="title">ARKAIOS</span>
+        <span class="chip connecting" id="ai-status">IA Conectando...</span>
+        <select class="model-selector" id="model-selector">
+          <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="claude-3-opus">Claude 3 Opus</option>
+          <option value="claude-3-haiku">Claude 3 Haiku</option>
+          <option value="gpt-4o">GPT-4o</option>
+          <option value="gpt-4.1">GPT-4.1</option>
+          <option value="o1-mini">o1-mini</option>
+        </select>
+        <span class="chip" id="puter-status">Puter: Iniciando</span>
+        <button class="chip logout" onclick="logout()">Salir</button>
+      </div>
+
+      <div id="feed" class="feed"></div>
+
+      <div class="composer">
+        <input id="file" type="file" hidden multiple accept="image/*,.pdf,.txt,.md,.json">
+        <button id="btn-attach" class="secondary" onclick="document.getElementById('file').click()">📎</button>
+        <textarea id="text" placeholder="Escribe aquí… (Ctrl+Enter para enviar)"></textarea>
+        <button id="send" class="primary" onclick="sendMsg()">Enviar</button>
+      </div>
+      
+      <div id="attachment-preview" class="attachment-preview"></div>
+    </div>
+
+    <aside class="side">
+      <h3>Estado del Sistema</h3>
+      <div class="gallery">
+        <div class="gal-item">
+          <img src="https://picsum.photos/seed/puter/96">
+          <div>
+            <div>Puter.js SDK</div>
+            <small id="puter-detail">Cargando...</small>
+          </div>
+        </div>
+        <div class="gal-item">
+          <img src="https://picsum.photos/seed/ai/96">
+          <div>
+            <div>IA Disponible</div>
+            <small id="ai-detail">Verificando...</small>
+          </div>
+        </div>
+        <div class="gal-item">
+          <img src="https://picsum.photos/seed/files/96">
+          <div>
+            <div>Sistema Archivos</div>
+            <small id="fs-detail">Pendiente...</small>
+          </div>
+        </div>
+      </div>
+
+      <h3>Comandos Especiales</h3>
+      <div class="gallery">
+        <div class="gal-item"><img src="https://picsum.photos/seed/img/96"><div>/img descripción de imagen</div></div>
+        <div class="gal-item"><img src="https://picsum.photos/seed/analyze/96"><div>/analyze texto/archivo</div></div>
+        <div class="gal-item"><img src="https://picsum.photos/seed/test/96"><div>/test - probar conexión</div></div>
+        <div class="gal-item"><img src="https://picsum.photos/seed/clear/96"><div>/clear - limpiar chat</div></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- Puter.js SDK -->
+  <script src="https://js.puter.com/v2/"></script>
+  
+  <script>
+    // Variables globales
+    let authToken = null;
+    let puterReady = false;
+    let aiReady = false;
+    let pendingFiles = [];
+    let conversationHistory = [];
+    
+    // Elementos DOM
+    const statusDot = document.getElementById('status-dot');
+    const aiStatus = document.getElementById('ai-status');
+    const puterStatus = document.getElementById('puter-status');
+    const modelSelector = document.getElementById('model-selector');
+    const feedEl = document.getElementById('feed');
+    const textInput = document.getElementById('text');
+    const sendBtn = document.getElementById('send');
+    const fileInput = document.getElementById('file');
+    const attachmentPreview = document.getElementById('attachment-preview');
+    
+    // Funciones de autenticación
+    function mustAuth() {
+      const token = localStorage.getItem('ark_token');
+      if (!token) { 
+        location.href = '/'; 
+        return; 
+      }
+      authToken = token;
+      const u = JSON.parse(localStorage.getItem('ark_user') || '{}');
+      addMsg(`Autenticado como <b>${u.email || 'demo@arkaios.local'}</b>.`, 'system');
+    }
+
+    function logout() {
+      localStorage.removeItem('ark_token');
+      localStorage.removeItem('ark_user');
+      location.href = '/';
+    }
+
+    // Funciones de UI
+    function updateStatus(component, status) {
+      const elements = {
+        'puter': { dot: statusDot, status: puterStatus, detail: document.getElementById('puter-detail') },
+        'ai': { status: aiStatus, detail: document.getElementById('ai-detail') },
+        'fs': { detail: document.getElementById('fs-detail') }
+      };
+      
+      const el = elements[component];
+      if (!el) return;
+      
+      const configs = {
+        'connecting': { class: 'connecting', text: 'Conectando...', color: '#f59e0b' },
+        'online': { class: 'success', text: 'Conectado', color: '#16a34a' },
+        'error': { class: 'error', text: 'Error', color: '#ef4444' },
+        'ready': { class: 'success', text: 'Listo', color: '#16a34a' }
+      };
+      
+      const config = configs[status] || configs['connecting'];
+      
+      if (el.dot) {
+        el.dot.className = `status-dot ${config.class.replace('success', 'online')}`;
+      }
+      if (el.status) {
+        el.status.className = `chip ${config.class}`;
+        el.status.textContent = config.text;
+      }
+      if (el.detail) {
+        el.detail.textContent = config.text;
+        el.detail.style.color = config.color;
+      }
+    }
+
+    function addMsg(html, who = 'ai') {
+      const d = document.createElement('div');
+      d.className = `msg ${who}`;
+      d.innerHTML = html;
+      feedEl.appendChild(d);
+      feedEl.scrollTop = feedEl.scrollHeight;
+    }
+
+    // Funciones de archivos
+    function renderAttachments() {
+      attachmentPreview.innerHTML = '';
+      pendingFiles.forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'attachment-item';
+        
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          const reader = new FileReader();
+          reader.onload = e => img.src = e.target.result;
+          reader.readAsDataURL(file);
+          item.appendChild(img);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = `📄 ${file.name}`;
+          span.style.padding = '20px';
+          span.style.display = 'block';
+          item.appendChild(span);
+        }
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'attachment-remove';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => {
+          pendingFiles.splice(index, 1);
+          renderAttachments();
+        };
+        item.appendChild(removeBtn);
+        
+        attachmentPreview.appendChild(item);
+      });
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const newFiles = Array.from(e.target.files);
+      pendingFiles = [...pendingFiles, ...newFiles];
+      renderAttachments();
+      addMsg(`📎 ${newFiles.length} archivo(s) adjuntado(s)`, 'system');
+    });
+
+    // Función principal de inicialización
+    async function initializePuter() {
+      updateStatus('puter', 'connecting');
+      addMsg('🔄 Inicializando Puter.js...', 'system');
+      
+      let attempts = 0;
+      const maxAttempts = 20;
+      
+      while (attempts < maxAttempts) {
+        try {
+          // Verificar si Puter está disponible
+          if (typeof puter !== 'undefined' && puter.ai) {
+            puterReady = true;
+            updateStatus('puter', 'online');
+            document.getElementById('puter-detail').textContent = 'SDK Cargado';
+            
+            // Verificar capacidades de IA
+            await testAI();
+            
+            // Verificar sistema de archivos
+            await testFileSystem();
+            
+            addMsg('✅ Sistema ARKAIOS completamente iniciado y listo', 'system');
+            addMsg('👋 ¡Hola! Soy tu asistente de IA integrado. Puedes escribirme preguntas, adjuntar archivos, o usar comandos especiales como /img para generar imágenes.', 'ai');
+            
+            break;
+          }
+        } catch (error) {
+          console.log(`Intento ${attempts + 1} falló:`, error);
+        }
+        
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (attempts >= maxAttempts) {
+        updateStatus('puter', 'error');
+        addMsg('❌ Error: No se pudo cargar Puter.js. Verifica tu conexión a internet.', 'system');
+      }
+    }
+
+    async function testImageGeneration() {
+      try {
+        if (puter?.ai?.txt2img) {
+          // Hacer una prueba simple
+          await puter.ai.txt2img("test image");
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('Image generation test failed:', error);
+        return false;
+      }
+    }
+
+    async function testAI() {
+      try {
+        updateStatus('ai', 'connecting');
+        
+        // Prueba simple con el modelo seleccionado
+        const model = modelSelector.value;
+        const response = await puter.ai.chat('Di solo "OK" para confirmar que funcionas', {
+          model: model,
+          stream: false
+        });
+        
+        let responseText = '';
+        if (typeof response === 'string') {
+          responseText = response;
+        } else if (response?.message?.content) {
+          if (Array.isArray(response.message.content)) {
+            responseText = response.message.content[0]?.text || response.message.content[0] || '';
+          } else {
+            responseText = response.message.content;
+          }
+        } else if (response?.text) {
+          responseText = response.text;
+        }
+        
+        aiReady = true;
+        updateStatus('ai', 'ready');
+        
+        // Probar generación de imágenes
+        const imageGenAvailable = await testImageGeneration();
+        document.getElementById('ai-detail').textContent = `Modelo: ${model}${imageGenAvailable ? ', Imágenes: ✓' : ', Imágenes: ✗'}`;
+        console.log('IA Test OK:', responseText, 'Images:', imageGenAvailable);
+        
+      } catch (error) {
+        updateStatus('ai', 'error');
+        document.getElementById('ai-detail').textContent = 'Error: ' + error.message;
+        console.error('IA Test Error:', error);
+      }
+    }
+
+    async function testFileSystem() {
+      try {
+        if (puter.fs) {
+          await puter.fs.readdir('/');
+          updateStatus('fs', 'ready');
+        } else {
+          updateStatus('fs', 'error');
+        }
+      } catch (error) {
+        updateStatus('fs', 'error');
+        console.error('FS Test Error:', error);
+      }
+    }
+
+    // Función principal de envío de mensajes
+    async function sendMsg() {
+      const text = textInput.value.trim();
+      if (!text && pendingFiles.length === 0) return;
+      
+      if (!puterReady || !aiReady) {
+        addMsg('❌ Sistema no está listo. Espera a que se complete la inicialización.', 'system');
+        return;
+      }
+
+      // Mostrar mensaje del usuario
+      if (text) addMsg(text, 'me');
+      if (pendingFiles.length > 0) {
+        addMsg(`📎 Enviando ${pendingFiles.length} archivo(s)...`, 'system');
+      }
+
+      // Limpiar input y desactivar botón
+      textInput.value = '';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Enviando...';
+
+      try {
+        // Manejar comandos especiales
+        if (text.startsWith('/')) {
+          await handleSpecialCommand(text);
+          return;
+        }
+
+        // Construir mensaje completo
+        let fullMessage = text;
+        
+        // Si hay archivos, intentar subirlos y referenciarlos
+        if (pendingFiles.length > 0) {
+          fullMessage += "\n\nArchivos adjuntos:";
+          for (const file of pendingFiles) {
+            if (file.type.startsWith('image/')) {
+              // Para imágenes, leer como base64 y enviar directamente
+              const reader = new FileReader();
+              const base64 = await new Promise((resolve) => {
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(file);
+              });
+              fullMessage += `\n- ${file.name}: ${base64}`;
+            } else {
+              // Para otros archivos, solo mencionar
+              fullMessage += `\n- ${file.name} (${file.type})`;
+            }
+          }
+        }
+
+        // Agregar al historial
+        conversationHistory.push({ role: "user", content: fullMessage });
+
+        // Enviar a IA usando Puter.js
+        const model = modelSelector.value;
+        console.log('Enviando a modelo:', model);
+        
+        let aiResponse;
+        
+        // Determinar si usar Claude o GPT según el modelo seleccionado
+        if (model.startsWith('claude')) {
+          // Para Claude, usar el historial completo de conversación
+          const messages = conversationHistory.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }));
+          
+          const response = await puter.ai.chat(messages, {
+            model: model,
+            stream: false
+          });
+          
+          if (typeof response === 'string') {
+            aiResponse = response;
+          } else if (response?.message?.content) {
+            if (Array.isArray(response.message.content)) {
+              aiResponse = response.message.content[0]?.text || response.message.content[0] || '';
+            } else {
+              aiResponse = response.message.content;
+            }
+          } else if (response?.text) {
+            aiResponse = response.text;
+          } else {
+            aiResponse = 'Respuesta recibida en formato no reconocido.';
+          }
+        } else {
+          // Para GPT/OpenAI, enviar mensaje actual
+          const response = await puter.ai.chat(fullMessage, {
+            model: model,
+            stream: false
+          });
+          
+          if (typeof response === 'string') {
+            aiResponse = response;
+          } else if (response?.message?.content) {
+            aiResponse = response.message.content;
+          } else if (response?.text) {
+            aiResponse = response.text;
+          } else {
+            aiResponse = 'Respuesta recibida en formato no reconocido.';
+          }
+        }
+
+        // Agregar respuesta al historial
+        conversationHistory.push({ role: "assistant", content: aiResponse });
+
+        // Mostrar respuesta
+        addMsg(aiResponse, 'ai');
+
+      } catch (error) {
+        console.error('Error enviando mensaje:', error);
+        addMsg(`❌ Error: ${error.message}. Verifica tu conexión y el modelo seleccionado.`, 'system');
+      } finally {
+        // Restaurar interfaz
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Enviar';
+        
+        // Limpiar archivos adjuntos
+        pendingFiles = [];
+        renderAttachments();
+      }
+    }
+
+    async function handleSpecialCommand(command) {
+      const [cmd, ...args] = command.slice(1).split(' ');
+      const arg = args.join(' ').trim();
+
+      try {
+        switch (cmd) {
+          case 'img':
+            if (!arg) {
+              addMsg('❌ Uso: /img descripción de la imagen', 'system');
+              return;
+            }
+            
+            addMsg('🎨 Generando imagen con DALL-E...', 'system');
+            
+            try {
+              // Verificar si txt2img está disponible
+              if (!puter.ai.txt2img) {
+                addMsg('❌ Generación de imágenes no disponible en este momento. Verifica la conexión con Puter.js.', 'system');
+                return;
+              }
+              
+              const imageElement = await puter.ai.txt2img(arg);
+              
+              // Crear contenedor para la imagen
+              const imgContainer = document.createElement('div');
+              imgContainer.className = 'msg ai';
+              
+              // Añadir título descriptivo
+              const title = document.createElement('div');
+              title.style.marginBottom = '8px';
+              title.style.fontWeight = 'bold';
+              title.innerHTML = `🖼️ Imagen generada: "${arg}"`;
+              imgContainer.appendChild(title);
+              
+              // Aplicar estilos a la imagen
+              imageElement.style.maxWidth = '100%';
+              imageElement.style.height = 'auto';
+              imageElement.style.borderRadius = '12px';
+              imageElement.style.border = '1px solid #e5e7eb';
+              imgContainer.appendChild(imageElement);
+              
+              feedEl.appendChild(imgContainer);
+              feedEl.scrollTop = feedEl.scrollHeight;
+              
+              addMsg('✅ Imagen generada exitosamente', 'system');
+              
+            } catch (error) {
+              console.error('Error generando imagen:', error);
+              addMsg(`❌ Error generando imagen: ${error.message}. Posibles causas:
+- Puter.ai.txt2img no disponible
+- Conexión interrumpida
+- Descripción muy compleja o inapropiada
+- Límites de uso alcanzados`, 'system');
+            }
+            break;
+
+          case 'imgtest':
+            addMsg('🔧 Verificando disponibilidad de generación de imágenes...', 'system');
+            try {
+              if (!puter?.ai?.txt2img) {
+                addMsg('❌ puter.ai.txt2img no está disponible', 'system');
+                return;
+              }
+              
+              addMsg('✅ Función txt2img disponible. Probando generación...', 'system');
+              const testImg = await puter.ai.txt2img("small red circle");
+              
+              if (testImg) {
+                const container = document.createElement('div');
+                container.className = 'msg ai';
+                container.innerHTML = '<div style="margin-bottom:8px;font-weight:bold;">🎯 Imagen de prueba:</div>';
+                testImg.style.maxWidth = '100px';
+                testImg.style.borderRadius = '8px';
+                container.appendChild(testImg);
+                feedEl.appendChild(container);
+                feedEl.scrollTop = feedEl.scrollHeight;
+                
+                addMsg('✅ Generación de imágenes funcionando correctamente', 'system');
+              } else {
+                addMsg('❌ La función devolvió resultado vacío', 'system');
+              }
+            } catch (error) {
+              addMsg(`❌ Error en prueba de imágenes: ${error.message}`, 'system');
+            }
+            break;
+
+          case 'test':
+            addMsg('🔧 Probando conexiones...', 'system');
+            await testAI();
+            await testFileSystem();
+            addMsg('✅ Prueba completada. Revisa el panel de estado.', 'system');
+            break;
+
+          case 'clear':
+            feedEl.innerHTML = '';
+            conversationHistory = [];
+            addMsg('🧹 Chat limpiado. Historial de conversación reiniciado.', 'system');
+            break;
+
+          case 'analyze':
+            if (!arg) {
+              addMsg('❌ Uso: /analyze texto a analizar', 'system');
+              return;
+            }
+            
+            const analysis = await puter.ai.chat(`Analiza detalladamente el siguiente texto: "${arg}"`, {
+              model: modelSelector.value,
+              stream: false
+            });
+            
+            let analysisText = '';
+            if (typeof analysis === 'string') {
+              analysisText = analysis;
+            } else if (analysis?.message?.content) {
+              analysisText = analysis.message.content;
+            } else {
+              analysisText = 'No se pudo completar el análisis.';
+            }
+            
+            addMsg(`📊 Análisis:\n${analysisText}`, 'ai');
+            break;
+
+          default:
+            addMsg(`❌ Comando desconocido: /${cmd}. Comandos disponibles: /img, /test, /clear, /analyze`, 'system');
+        }
+      } catch (error) {
+        addMsg(`❌ Error ejecutando comando /${cmd}: ${error.message}`, 'system');
+      }
+    }
+
+    // Event listeners
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        sendMsg();
+      }
+    });
+
+    modelSelector.addEventListener('change', async () => {
+      addMsg(`🔄 Cambiando a modelo: ${modelSelector.value}`, 'system');
+      await testAI();
+    });
+
+    // Drag & Drop para archivos
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      document.body.style.backgroundColor = '#f0f9ff';
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      if (e.clientX === 0 && e.clientY === 0) {
+        document.body.style.backgroundColor = '';
+      }
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      document.body.style.backgroundColor = '';
+      
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        pendingFiles = [...pendingFiles, ...files];
+        renderAttachments();
+        addMsg(`📎 ${files.length} archivo(s) añadido(s) por drag & drop`, 'system');
+      }
+    });
+
+    // Paste para imágenes
+    document.addEventListener('paste', async (e) => {
+      const items = Array.from(e.clipboardData.items);
+      const imageItems = items.filter(item => item.type.startsWith('image/'));
+      
+      if (imageItems.length > 0) {
+        for (const item of imageItems) {
+          const file = item.getAsFile();
+          if (file) {
+            const renamedFile = new File([file], `pasted-image-${Date.now()}.png`, {
+              type: file.type
+            });
+            pendingFiles.push(renamedFile);
+          }
+        }
+        renderAttachments();
+        addMsg(`📎 ${imageItems.length} imagen(es) pegada(s)`, 'system');
+      }
+    });
+
+    // Inicialización al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+      mustAuth();
+      initializePuter();
+    });
+  </script>
+</body>
+</html>

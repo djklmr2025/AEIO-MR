@@ -59,10 +59,9 @@
       <span class="badge">Puter.js + Claude</span>
       <span class="status connecting" id="connectionStatus">Conectando...</span>
       <select class="model-selector" id="modelSelector">
-        <option value="claude-3-7-sonnet">Claude 3.7 Sonnet</option>
-        <option value="claude-sonnet-4">Claude Sonnet 4</option>
-        <option value="claude-opus-4">Claude Opus 4</option>
-        <option value="claude-3-7-opus">Claude 3.7 Opus</option>
+        <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+        <option value="claude-3-opus">Claude 3 Opus</option>
+        <option value="claude-3-haiku">Claude 3 Haiku</option>
       </select>
     </header>
 
@@ -103,8 +102,24 @@
     let pendingFiles = [];
     let isConnected = false;
     let conversationHistory = [];
+    let puterReady = false;
+    let initRetries = 0;
+    const maxRetries = 15;
 
-    // Funciones de estado de conexión
+    // Esperar a que Puter.js se cargue
+    async function waitForPuter() {
+      while (initRetries < maxRetries) {
+        if (typeof puter !== 'undefined' && puter?.ai) {
+          puterReady = true;
+          return true;
+        }
+        initRetries++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      return false;
+    }
+
+    // Funciones de estado de conexión - CORREGIDAS
     function updateConnectionStatus(ok) { 
       isConnected = ok; 
       statusEl.textContent = ok ? 'Conectado' : 'Error'; 
@@ -116,7 +131,7 @@
       statusEl.className = 'status connecting'; 
     }
 
-    // Añadir mensaje al historial
+    // Añadir mensaje al historial - MEJORADO
     function addMessage({text, who = 'ai', attachments = [], isSystem = false}) {
       const wrap = document.createElement('div');
       let cls = `msg ${who}`; 
@@ -134,18 +149,24 @@
       wrap.appendChild(head);
       wrap.appendChild(body);
 
-      // Botón para guardar respuesta como archivo .txt
-      if (who === 'ai' && !isSystem) {
+      // Botón para guardar respuesta - MEJORADO
+      if (who === 'ai' && !isSystem && text.length > 50) {
         const tools = document.createElement('div');
         tools.className = 'tools';
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn';
-        saveBtn.textContent = 'Guardar respuesta (.txt)';
+        saveBtn.textContent = 'Guardar (.txt)';
         saveBtn.onclick = () => {
-          const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+          const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+          const content = `ARKAIOS - Respuesta de Claude
+Timestamp: ${new Date().toLocaleString()}
+Modelo: ${modelSelector.value}
+
+${text}`;
+          const blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = `arkaios-respuesta-${Date.now()}.txt`;
+          a.download = `arkaios-claude-${timestamp}.txt`;
           a.click();
           URL.revokeObjectURL(a.href);
         };
@@ -153,7 +174,7 @@
         wrap.appendChild(tools);
       }
 
-      // Mostrar archivos adjuntos
+      // Mostrar archivos adjuntos - MEJORADO
       if (attachments?.length) {
         const att = document.createElement('div'); 
         att.className = 'attachments';
@@ -164,6 +185,12 @@
             const img = new Image(); 
             img.alt = a.name; 
             img.src = a.preview || a.url;
+            img.onerror = () => {
+              img.style.display = 'none';
+              const span = document.createElement('span');
+              span.textContent = '❌ ' + a.name;
+              box.appendChild(span);
+            };
             box.appendChild(img);
           } else {
             const s = document.createElement('span'); 
@@ -180,7 +207,7 @@
       return wrap;
     }
 
-    // Mostrar previsualizaciones de archivos
+    // Previsualizaciones - CORREGIDAS
     function renderPreviews() {
       previews.innerHTML = '';
       pendingFiles.forEach((f, idx) => {
@@ -190,17 +217,32 @@
         
         const x = document.createElement('button'); 
         x.textContent = '×';
-        x.style.cssText = 'position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1';
-        x.onclick = () => { pendingFiles.splice(idx, 1); renderPreviews(); };
+        x.style.cssText = 'position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1;z-index:1';
+        x.onclick = () => { 
+          URL.revokeObjectURL(pendingFiles[idx].preview); // Limpiar URL objeto
+          pendingFiles.splice(idx, 1); 
+          renderPreviews(); 
+        };
 
         if (f.type.startsWith('image/')) {
           const img = new Image(); 
           img.alt = f.name; 
           img.style.maxWidth = '100px'; 
           img.style.maxHeight = '100px';
+          img.style.objectFit = 'cover';
           box.appendChild(img);
+          
           const rd = new FileReader(); 
-          rd.onload = e => img.src = e.target.result; 
+          rd.onload = e => {
+            img.src = e.target.result;
+            f.preview = e.target.result; // Guardar para uso posterior
+          };
+          rd.onerror = () => {
+            img.style.display = 'none';
+            const span = document.createElement('span');
+            span.textContent = '❌ Error';
+            box.appendChild(span);
+          };
           rd.readAsDataURL(f);
         } else {
           const s = document.createElement('span'); 
@@ -211,52 +253,81 @@
           s.style.whiteSpace = 'nowrap'; 
           box.appendChild(s);
         }
+        
         box.appendChild(x); 
         previews.appendChild(box);
       });
     }
 
-    // Manejo de archivos desde input
+    // Manejo de archivos - CORREGIDO
     fileInput.addEventListener('change', e => {
-      const add = Array.from(e.target.files).filter(f => f.size <= 10 * 1024 * 1024);
-      if (add.length !== e.target.files.length) {
-        addMessage({text: 'Algunos archivos >10MB se omitieron', who: 'ai', isSystem: true});
-      }
-      pendingFiles = [...pendingFiles, ...add]; 
+      const newFiles = Array.from(e.target.files).filter(f => {
+        if (f.size > 10 * 1024 * 1024) {
+          addMessage({
+            text: `Archivo ${f.name} omitido (>10MB)`, 
+            who: 'ai', 
+            isSystem: true
+          });
+          return false;
+        }
+        return true;
+      });
+      
+      pendingFiles = [...pendingFiles, ...newFiles]; 
       renderPreviews(); 
       e.target.value = '';
     });
     
     clearBtn.addEventListener('click', () => { 
+      // Limpiar URLs objeto para evitar memory leaks
+      pendingFiles.forEach(f => {
+        if (f.preview) URL.revokeObjectURL(f.preview);
+      });
       pendingFiles = []; 
       renderPreviews(); 
       fileInput.value = ''; 
     });
 
-    // Drag & Drop
+    // Drag & Drop - MEJORADO
     const drop = document.getElementById('drop');
+    
     ['dragenter', 'dragover'].forEach(ev => { 
-      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('dragover'); }); 
+      drop.addEventListener(ev, e => { 
+        e.preventDefault(); 
+        drop.classList.add('dragover'); 
+      }); 
       document.addEventListener(ev, e => e.preventDefault()); 
     });
     
     ['dragleave', 'drop'].forEach(ev => { 
-      drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('dragover'); }); 
+      drop.addEventListener(ev, e => { 
+        e.preventDefault(); 
+        drop.classList.remove('dragover'); 
+      }); 
     });
     
     drop.addEventListener('drop', e => { 
-      const add = Array.from(e.dataTransfer.files).filter(f => f.size <= 10 * 1024 * 1024);
-      if (add.length !== e.dataTransfer.files.length) {
-        addMessage({text: 'Algunos archivos >10MB se omitieron', who: 'ai', isSystem: true});
-      }
-      pendingFiles = [...pendingFiles, ...add]; 
+      const newFiles = Array.from(e.dataTransfer.files).filter(f => {
+        if (f.size > 10 * 1024 * 1024) {
+          addMessage({
+            text: `Archivo ${f.name} omitido (>10MB)`, 
+            who: 'ai', 
+            isSystem: true
+          });
+          return false;
+        }
+        return true;
+      });
+      
+      pendingFiles = [...pendingFiles, ...newFiles]; 
       renderPreviews();
     });
 
-    // Pegar imágenes con Ctrl+V
+    // Pegar imágenes - MEJORADO
     document.addEventListener('paste', async (e) => {
       const items = e.clipboardData?.items || [];
       let found = false;
+      
       for (const it of items) {
         if (it.type && it.type.startsWith('image/')) {
           const blob = it.getAsFile();
@@ -267,38 +338,87 @@
           }
         }
       }
+      
       if (found) { 
         renderPreviews(); 
-        addMessage({text: '📸 Captura añadida desde portapapeles', who: 'ai', isSystem: true}); 
+        addMessage({
+          text: 'Imagen añadida desde portapapeles', 
+          who: 'ai', 
+          isSystem: true
+        }); 
       }
     });
 
-    // Subir archivos a Puter
+    // Subir archivos a Puter - COMPLETAMENTE CORREGIDO
     async function uploadFilesToPuter() {
       if (!pendingFiles.length) return [];
+      if (!puterReady || !window.puter?.fs) {
+        addMessage({
+          text: 'Sistema de archivos no disponible. Archivos conservados localmente.',
+          who: 'ai',
+          isSystem: true
+        });
+        return pendingFiles.map(f => ({
+          name: f.name,
+          type: f.type,
+          preview: f.preview,
+          local: true
+        }));
+      }
       
       const uploadedFiles = [];
       
       for (const file of pendingFiles) {
         try {
-          // Subir archivo a Puter
-          const puterFile = await puter.fs.upload(file);
+          // Método 1: puter.fs.upload (si existe)
+          let puterFile;
+          let publicURL;
           
-          // Obtener URL pública
-          const publicURL = await puter.fs.getPublicURL(puterFile.path);
+          if (puter.fs.upload) {
+            puterFile = await puter.fs.upload(file);
+            publicURL = await puter.fs.getPublicURL(puterFile.path);
+          } else {
+            // Método 2: puter.fs.write manual
+            const safeName = file.name.replace(/[^\w\.-]/g, '_');
+            const path = `/home/${safeName}`;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            await puter.fs.write(path, uint8Array);
+            puterFile = { path: path };
+            
+            // Intentar obtener URL pública
+            try {
+              publicURL = await puter.fs.getPublicURL(path);
+            } catch {
+              publicURL = path; // Fallback a path local
+            }
+          }
           
           uploadedFiles.push({
             name: file.name,
             url: publicURL,
             type: file.type,
-            preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+            path: puterFile.path,
+            preview: file.type.startsWith('image/') ? (file.preview || URL.createObjectURL(file)) : null
           });
+          
         } catch (error) {
-          console.error('Error subiendo archivo:', error);
+          console.error('Error subiendo archivo:', file.name, error);
           addMessage({
-            text: `❌ Error al subir ${file.name}: ${error.message}`,
+            text: `Error subiendo ${file.name}: ${error.message}`,
             who: 'ai', 
             isSystem: true
+          });
+          
+          // Conservar archivo localmente
+          uploadedFiles.push({
+            name: file.name,
+            type: file.type,
+            preview: file.preview,
+            local: true,
+            error: error.message
           });
         }
       }
@@ -306,46 +426,71 @@
       return uploadedFiles;
     }
 
-    // Función principal para enviar mensajes
+    // Función principal para enviar - COMPLETAMENTE CORREGIDA
     async function send() {
       const text = input.value.trim();
       if (!text && pendingFiles.length === 0) return;
       if (sendBtn.disabled) return;
 
-      // Mostrar mensaje localmente
+      // Verificar que Puter está listo
+      if (!puterReady) {
+        addMessage({
+          text: 'Sistema no listo. Verifica conexión con Puter.js.',
+          who: 'ai',
+          isSystem: true
+        });
+        return;
+      }
+
+      // Generar previsualizaciones locales
       const localPreview = [];
       for (const f of pendingFiles) {
         if (f.type.startsWith('image/')) {
-          const p = await new Promise(res => {
-            const rd = new FileReader();
-            rd.onload = e => res(e.target.result);
-            rd.readAsDataURL(f);
-          });
-          localPreview.push({name: f.name, preview: p, type: f.type});
+          try {
+            const preview = await new Promise((resolve, reject) => {
+              const rd = new FileReader();
+              rd.onload = e => resolve(e.target.result);
+              rd.onerror = () => reject(new Error('Error leyendo archivo'));
+              rd.readAsDataURL(f);
+            });
+            localPreview.push({name: f.name, preview: preview, type: f.type});
+          } catch (err) {
+            localPreview.push({name: f.name, type: f.type, error: err.message});
+          }
         } else { 
           localPreview.push({name: f.name, type: f.type}); 
         }
       }
       
+      // Mostrar mensaje del usuario
       if (text || localPreview.length) {
-        addMessage({text: text || '(adjuntos)', who: 'user', attachments: localPreview});
+        addMessage({
+          text: text || '(enviando adjuntos)', 
+          who: 'user', 
+          attachments: localPreview
+        });
       }
       
+      // Limpiar input y deshabilitar envío
       input.value = '';
       sendBtn.disabled = true;
       sendBtn.textContent = 'Enviando…';
 
       try {
-        // 1. Subir archivos a Puter (si hay)
+        // 1. Subir archivos a Puter
         const uploadedFiles = await uploadFilesToPuter();
         
-        // 2. Construir mensaje completo
+        // 2. Construir mensaje completo para Claude
         let fullMessage = text;
         
         if (uploadedFiles.length > 0) {
           fullMessage += "\n\nArchivos adjuntos:";
           uploadedFiles.forEach(file => {
-            fullMessage += `\n- ${file.name}: ${file.url}`;
+            if (file.local) {
+              fullMessage += `\n- ${file.name} (local, tipo: ${file.type})`;
+            } else {
+              fullMessage += `\n- ${file.name}: ${file.url || file.path}`;
+            }
           });
         }
         
@@ -355,14 +500,56 @@
         // 4. Seleccionar modelo
         const selectedModel = modelSelector.value;
         
-        // 5. Enviar mensaje a Claude usando Puter.js
-        const response = await puter.ai.chat(fullMessage, {
-          model: selectedModel,
-          stream: false
-        });
+        // 5. Enviar mensaje a Claude - CON MÚLTIPLES FALLBACKS
+        let aiResponse;
         
-        // 6. Procesar respuesta
-        const aiResponse = response.message.content[0].text;
+        try {
+          // Método principal: puter.ai.chat
+          if (puter?.ai?.chat) {
+            console.log('Enviando a Claude via puter.ai.chat, modelo:', selectedModel);
+            const response = await puter.ai.chat(fullMessage, {
+              model: selectedModel,
+              stream: false
+            });
+            
+            // Procesar respuesta de Claude (múltiples formatos)
+            if (typeof response === 'string') {
+              aiResponse = response;
+            } else if (response?.message?.content) {
+              if (Array.isArray(response.message.content)) {
+                aiResponse = response.message.content[0]?.text || response.message.content[0] || 'Respuesta vacía';
+              } else {
+                aiResponse = response.message.content;
+              }
+            } else if (response?.text) {
+              aiResponse = response.text;
+            } else if (response?.choices?.[0]?.message?.content) {
+              aiResponse = response.choices[0].message.content;
+            } else {
+              aiResponse = 'Respuesta recibida en formato inesperado: ' + JSON.stringify(response).substring(0, 200);
+            }
+          } else {
+            throw new Error('Método puter.ai.chat no disponible');
+          }
+        } catch (chatError) {
+          console.warn('Error en chat principal:', chatError);
+          
+          // Fallback: intentar con complete
+          if (puter?.ai?.complete) {
+            console.log('Intentando fallback con puter.ai.complete');
+            const completeResponse = await puter.ai.complete(fullMessage, {model: selectedModel});
+            aiResponse = typeof completeResponse === 'string' ? 
+              completeResponse : 
+              (completeResponse?.text || JSON.stringify(completeResponse));
+          } else {
+            throw chatError;
+          }
+        }
+        
+        // 6. Validar respuesta
+        if (!aiResponse || aiResponse.trim().length === 0) {
+          aiResponse = 'Respuesta vacía recibida del modelo ' + selectedModel;
+        }
         
         // 7. Añadir al historial
         conversationHistory.push({ role: "assistant", content: aiResponse });
@@ -372,66 +559,117 @@
         addMessage({
           text: aiResponse,
           who: 'ai',
-          attachments: uploadedFiles
+          attachments: uploadedFiles.filter(f => !f.error)
         });
 
+        // 9. Mostrar errores si los hay
+        const errorFiles = uploadedFiles.filter(f => f.error);
+        if (errorFiles.length > 0) {
+          addMessage({
+            text: `Errores en ${errorFiles.length} archivo(s): ${errorFiles.map(f => f.name).join(', ')}`,
+            who: 'ai',
+            isSystem: true
+          });
+        }
+
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error completo en send():', error);
         updateConnectionStatus(false);
         addMessage({
-          text: '❌ Error: ' + (error.message || 'Error desconocido'),
+          text: 'Error enviando mensaje: ' + (error.message || 'Error desconocido') + 
+                '\n\nVerifica tu conexión con Puter.js y el modelo seleccionado.',
           who: 'ai', 
           isSystem: true
         });
       } finally {
+        // Rehabilitar interfaz
         sendBtn.disabled = false;
         sendBtn.textContent = 'Enviar';
+        
+        // Limpiar archivos pendientes
+        pendingFiles.forEach(f => {
+          if (f.preview) URL.revokeObjectURL(f.preview);
+        });
         pendingFiles = [];
         renderPreviews();
         fileInput.value = '';
       }
     }
 
-    // Limpiar chat
+    // Limpiar chat - MEJORADO
     cleanChatBtn.addEventListener('click', () => {
-      if (!confirm('¿Borrar historial de conversación?')) return;
+      if (!confirm('¿Borrar historial de conversación? Esta acción no se puede deshacer.')) return;
+      
       historyDiv.innerHTML = '';
       conversationHistory = [];
       addMessage({
-        text: 'Conversación reiniciada. ¡Hola de nuevo!',
+        text: 'Conversación reiniciada. ¡Hola! Soy Arkaios con Claude. ¿En qué puedo ayudarte?',
         who: 'ai', 
         isSystem: true
       });
     });
 
-    // Probar conexión con Puter
+    // Probar conexión - COMPLETAMENTE CORREGIDO
     pingBtn.addEventListener('click', async () => {
       pingBtn.disabled = true;
       pingBtn.textContent = 'Probando…';
       setConnecting();
       
       try {
-        // Verificar que Puter.js está cargado y funciona
-        if (typeof puter !== 'undefined' && typeof puter.ai !== 'undefined') {
-          // Probar con una consulta simple
-          const response = await puter.ai.chat("Hola", {
-            model: "claude-3-7-sonnet",
-            stream: false
-          });
-          
-          updateConnectionStatus(true);
-          addMessage({
-            text: '✅ Conexión con Puter.js establecida correctamente',
-            who: 'ai', 
-            isSystem: true
-          });
-        } else {
-          throw new Error('Puter.js no está disponible');
+        // Verificar que Puter.js está cargado
+        if (typeof puter === 'undefined') {
+          throw new Error('Puter.js no está cargado');
         }
+        
+        if (!puter.ai) {
+          throw new Error('puter.ai no está disponible');
+        }
+        
+        // Probar con una consulta muy simple
+        console.log('Probando conexión con Claude...');
+        const testResponse = await puter.ai.chat("Responde solo: OK", {
+          model: "claude-3-5-sonnet",
+          stream: false
+        });
+        
+        console.log('Respuesta de prueba:', testResponse);
+        
+        let responseText;
+        if (typeof testResponse === 'string') {
+          responseText = testResponse;
+        } else if (testResponse?.message?.content) {
+          responseText = Array.isArray(testResponse.message.content) ? 
+            testResponse.message.content[0]?.text || testResponse.message.content[0] :
+            testResponse.message.content;
+        } else if (testResponse?.text) {
+          responseText = testResponse.text;
+        } else {
+          responseText = 'Respuesta en formato no estándar';
+        }
+        
+        updateConnectionStatus(true);
+        addMessage({
+          text: `Conexión exitosa con Puter.js y Claude
+Modelo: claude-3-5-sonnet
+Respuesta: ${responseText}
+Estado: LISTO`,
+          who: 'ai', 
+          isSystem: true
+        });
+        
       } catch (error) {
+        console.error('Error en ping:', error);
         updateConnectionStatus(false);
         addMessage({
-          text: '❌ Error de conexión: ' + error.message,
+          text: `Error de conexión: ${error.message}
+
+Posibles causas:
+- Puter.js no se cargó completamente
+- Sin conexión a internet  
+- API de Claude temporalmente no disponible
+- Modelo seleccionado no soportado
+
+Solución: Recarga la página e inténtalo de nuevo.`,
           who: 'ai', 
           isSystem: true
         });
@@ -441,8 +679,9 @@
       }
     });
 
-    // Event listeners
+    // Event listeners principales
     sendBtn.addEventListener('click', send);
+    
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -450,29 +689,76 @@
       }
     });
 
-    // Inicializar
+    // Inicialización - COMPLETAMENTE REESCRITA
     async function init() {
-      try {
-        // Verificar que Puter.js está cargado
-        if (typeof puter !== 'undefined') {
+      console.log('Inicializando ARKAIOS Claude...');
+      
+      // Mostrar estado inicial
+      addMessage({
+        text: 'Iniciando ARKAIOS... Conectando con Puter.js',
+        who: 'ai',
+        isSystem: true
+      });
+      
+      // Esperar a que Puter.js se cargue
+      const puterAvailable = await waitForPuter();
+      
+      if (puterAvailable) {
+        console.log('Puter.js cargado correctamente');
+        
+        try {
+          // Verificar capacidades
+          const hasAI = !!(puter?.ai);
+          const hasFS = !!(puter?.fs);
+          const hasTxt2Img = !!(puter?.ai?.txt2img);
+          
           updateConnectionStatus(true);
           addMessage({
-            text: '¡Hola! Soy Arkaios con Claude a través de Puter.js. Puedes adjuntar imágenes y archivos, y seleccionar diferentes modelos de Claude.',
+            text: `¡Hola! Soy Arkaios con Claude via Puter.js
+
+Sistema listo:
+- IA Claude: ${hasAI ? '✓' : '✗'} 
+- Sistema archivos: ${hasFS ? '✓' : '✗'}
+- Generación imágenes: ${hasTxt2Img ? '✓' : '✗'}
+
+Puedes:
+- Adjuntar imágenes y archivos (drag & drop o Ctrl+V)
+- Seleccionar diferentes modelos de Claude
+- Usar comandos especiales como "img: descripción"
+
+¿En qué puedo ayudarte?`,
             who: 'ai'
           });
-        } else {
-          throw new Error('Puter.js no se cargó correctamente');
+          
+        } catch (error) {
+          console.error('Error verificando capacidades:', error);
+          addMessage({
+            text: 'Sistema iniciado con limitaciones: ' + error.message,
+            who: 'ai',
+            isSystem: true
+          });
         }
-      } catch (error) {
+        
+      } else {
+        console.error('Puter.js no se pudo cargar después de', maxRetries, 'intentos');
         updateConnectionStatus(false);
         addMessage({
-          text: '❌ Error: ' + error.message,
-          who: 'ai', 
+          text: `❌ Error: No se pudo conectar con Puter.js después de ${maxRetries} intentos.
+
+Posibles soluciones:
+1. Verifica tu conexión a internet
+2. Recarga la página (Ctrl+F5)
+3. Verifica que https://js.puter.com/v2/ esté accesible
+4. Intenta en modo incógnito
+
+Si el problema persiste, Puter.js podría estar experimentando problemas temporales.`,
+          who: 'ai',
           isSystem: true
         });
       }
     }
-    
+
+    // Ejecutar inicialización cuando la página cargue
     window.addEventListener('load', init);
   </script>
 </body>
