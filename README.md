@@ -4,6 +4,9 @@
 
 **Prueba la App en modo web desde aqui: http://bit.ly/4n9shlL **
 
+Prueba la IA en servidor Remoro Google para seguridad contra Root/Sudo & Super User % Mode Builder
+(https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/arkaios_colab.ipynb)
+
 **Donaciones y Aportaciones en agradecimiento al proyecto:** (https://www.paypal.com/ncp/payment/MEZMLZEKS7HWL))
 
 **Soporte, ayuda comentarios o dudas:** djklmr@hotmail.com
