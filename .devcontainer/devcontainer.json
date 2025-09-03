@@ -1,0 +1,13 @@
+{
+  "name": "Strapi Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "forwardPorts": [1337],
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "strapi.strapi-sdk"
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@strapi/strapi": "^4.14.0",
+    "@strapi/plugin-users-permissions": "^4.14.0",
+    "@strapi/plugin-i18n": "^4.14.0",
+    "@strapi/cloud": "^4.14.0"
+  }
+}

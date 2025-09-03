@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ARKAIOS • Laboratorio Puter + Chat-GPT</title>
+
+  <style>
+    :root { --bg:#0b0b0f; --panel:#121219; --accent:#6ee7ff; --muted:#9aa3af; --ok:#10b981; --warn:#f59e0b; --err:#ef4444; --line:#1f2937 }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(180deg,#0b0b0f,#111827);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+      color:#e5e7eb; display:flex; flex-direction:column
+    }
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 20px;border-bottom:1px solid var(--line);background:#0d1117aa;
+      backdrop-filter: blur(6px);position:sticky;top:0;z-index:2
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:32px;height:32px;border-radius:12px;
+      background:radial-gradient(circle at 30% 30%, #6ee7ff, #9333ea 60%, #0ea5e9);
+      box-shadow:0 0 24px #6ee7ff55, inset 0 0 18px #ffffff22
+    }
+    h1{margin:0;font-size:18px;letter-spacing:1px}
+    .badge{
+      font-size:12px;color:#0f172a;background:linear-gradient(90deg,#6ee7ff,#93c5fd);
+      padding:4px 8px;border-radius:8px;font-weight:700
+    }
+    main{display:grid;grid-template-columns: 320px 1fr; gap:16px; padding:16px; height:100%}
+    aside{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;overflow:auto}
+    section#chat{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:60vh}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--line);background:#0c122055}
+    select,button,input{background:#0f172a;color:#e5e7eb;border:1px solid var(--line);border-radius:10px;padding:8px}
+    select{min-width:160px}
+    .grow{flex:1}
+    #messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+    .msg{padding:12px 14px;border-radius:12px;max-width:80%}
+    .user{align-self:flex-end;background:#1f2937}
+    .bot{align-self:flex-start;background:#0b1324;border:1px solid #1f293744}
+    .sys{align-self:center;background:#0b0b0f;border:1px dashed #374151;color:#93c5fd}
+    .muted{color:#9aa3af}
+    .row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);align-items:flex-start}
+    .pill{font-size:12px;border-radius:999px;padding:3px 8px;border:1px solid var(--line);background:#0f172a;color:#93c5fd}
+    .small{font-size:12px}
+    footer{padding:10px;text-align:center;color:#94a3b8}
+
+    /* Indicador de vida */
+    .live-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--line);background:#0f172a}
+    .live-dot{width:8px;height:8px;border-radius:999px;background:#64748b;box-shadow:0 0 0 0 rgba(100,116,139,0.7);transition:all .2s ease}
+    .live.on .live-dot{background:#10b981;animation:pulse 1.8s infinite;box-shadow:0 0 0 4px rgba(16,185,129,0.2)}
+    .live.off .live-dot{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,0.15)}
+    @keyframes pulse{0%{box-shadow:0 0 0 4px rgba(16,185,129,0.25)}70%{box-shadow:0 0 0 10px rgba(16,185,129,0)}100%{box-shadow:0 0 0 4px rgba(16,185,129,0)}}
+
+    /* Galería */
+    .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+    .thumb{background:#0b1324;border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:6px}
+    .thumb img{max-width:100%;border-radius:8px}
+    .thumb .meta{font-size:11px;color:#9aa3af;overflow:hidden;text-overflow:ellipsis}
+
+    /* Adjuntos */
+    .attach-bar{display:flex;flex-direction:column;gap:8px;flex:1}
+    .drop{border:2px dashed var(--line);border-radius:10px;padding:10px;color:#9aa3af;transition:border-color .2s}
+    .drop.dragover{border-color:#6ee7ff;background:rgba(110,231,255,.06)}
+    .previews{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:#0f172a;border-radius:10px;padding:6px 8px}
+    .chip img{width:64px;height:48px;object-fit:cover;border-radius:6px}
+    .chip b{font-size:12px}
+    .chip .x{cursor:pointer;color:#ff9db8;border:1px solid #ff9db8;border-radius:6px;padding:0 6px}
+    .ok{color:#10b981} .warn{color:#f59e0b} .err{color:#ef4444}
+    details.docs{margin:8px 0;background:#0b0f19;border:1px solid var(--line);border-radius:12px;padding:10px}
+    details.docs summary{cursor:pointer}
+    kbd{background:#111827;border:1px solid #1f2937;border-radius:6px;padding:2px 6px}
+  </style>
+
+  <!-- SDK Puter + ZIP -->
+  <script defer src="https://js.puter.com/v2/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>ARKAIOS • Núcleo</h1>
+      <span class="badge">Puter + Chat-GPT</span>
+      <span id="live-ind" class="live live-pill off"><span class="live-dot"></span><span class="live-text">OFFLINE</span></span>
+    </div>
+    <div class="small muted">Hecho con cariño por tu amigo <b>Chat-5</b></div>
+  </header>
+
+  <main>
+    <aside>
+      <h3 style="margin:6px 0 10px">Memoria Arkaios</h3>
+      <div id="mem-status" class="small muted">Cargando…</div>
+
+      <div style="margin:10px 0;display:flex;gap:6px">
+        <button id="btn-export" title="Exportar memoria a JSON">Exportar</button>
+        <label style="display:inline-flex;gap:6px;align-items:center">
+          <input id="file-import" type="file" accept=".json" style="display:none"/>
+          <button id="btn-import">Importar</button>
+        </label>
+        <button id="btn-clear" title="Vaciar memoria">Vaciar</button>
+      </div>
+
+      <div id="kv-core" class="small" style="display:grid;grid-template-columns:110px 1fr; gap:6px;"></div>
+
+      <hr style="border-color:var(--line);margin:12px 0"/>
+
+      <h4 style="margin:0 0 8px">Capacidades Puter</h4>
+      <button id="btn-diagnose" style="margin-bottom:8px">Probar IA</button>
+      <div id="puter-cap" class="small muted">Detectando…</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button id="btn-list">Listar /home</button>
+        <button id="btn-save">Guardar nota</button>
+      </div>
+      <pre id="fslog" class="small" style="white-space:pre-wrap;background:#0b0f19;border:1px solid var(--line);border-radius:12px;padding:8px;margin-top:8px;max-height:120px;overflow:auto"></pre>
+      <pre id="diaglog" class="small" style="white-space:pre-wrap;background:#0b0f19;border:1px solid var(--line);border-radius:12px;padding:8px;max-height:160px;overflow:auto"></pre>
+
+      <hr style="border-color:var(--line);margin:12px 0"/>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h4 style="margin:0">Galería (/home)</h4>
+        <div style="display:flex;gap:6px"><button id="btn-gal-refresh">Actualizar</button></div>
+      </div>
+      <div id="gallery" class="gallery"></div>
+    </aside>
+
+    <section id="chat">
+      <div class="toolbar">
+        <span class="pill">Modelo</span>
+        <select id="modelSelector">
+          <option value="gpt-4o">GPT-4o (estable)</option>
+          <option value="gpt-4.1">GPT-4.1</option>
+          <option value="gpt-4.5-preview">GPT-4.5 (preview)</option>
+        </select>
+
+        <span class="pill">Rol</span>
+        <select id="roleSelector" title="Personalidad de Arkaios">
+          <option value="cientifico">Científico-Constructor</option>
+          <option value="operador">Operador del Sistema</option>
+          <option value="creativo">Creativo-Diseñador</option>
+        </select>
+
+        <div class="grow"></div>
+        <button id="btn-reset">Reiniciar diálogo</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <!-- Barra de enviar + Adjuntar + zona de drop -->
+      <div class="row" id="dropzone">
+        <div class="attach-bar">
+          <input id="prompt" class="grow" placeholder="Escribe aquí… (Ctrl+Enter para enviar)"/>
+          <div class="previews" id="previews"></div>
+          <div class="drop" id="drophelp">Arrastra y suelta archivos aquí… o pega con <kbd>Ctrl</kbd>+<kbd>V</kbd></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label class="pill" style="cursor:pointer">
+            Adjuntar
+            <input id="attach-input" type="file" multiple style="display:none"/>
+          </label>
+          <button id="btn-clear-attach" class="small">Limpiar adjuntos</button>
+          <button id="btn-send" class="pill" style="font-weight:700">Enviar</button>
+        </div>
+      </div>
+
+      <details class="docs">
+        <summary><b>📘 Carta de habilidades & comandos (escríbeme <i>ayuda</i>)</b></summary>
+        <ul class="small">
+          <li><b>img: ...</b> → intento de texto-a-imagen (guarda en <code>/home</code> y se muestra en el chat).</li>
+          <li><b>analizar imagen &lt;n|url&gt;</b> → si hay puente de visión disponible, paso la imagen; si no, te digo que no hay visión.</li>
+          <li><b>listar &lt;ruta&gt;</b> (por defecto <code>/home</code>)</li>
+          <li><b>descomprimir &lt;archivo.zip|.rar&gt;</b> → descomprime en <code>/home</code> (RAR requiere que Puter/puente lo soporte).</li>
+          <li><b>crear archivo &lt;ruta&gt;: &lt;contenido&gt;</b> / <b>leer archivo &lt;ruta&gt;</b></li>
+        </ul>
+        <p class="small muted">Nota: La “visión” depende del puente Puter disponible. Si falta, los adjuntos se conservan y se listan/guardan igualmente.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>ARKAIOS controla su entorno vía Puter cuando está disponible. Si Puter no está cargado, opera en modo local con memoria persistente.</footer>
+
+  <script>
+  /********************
+   * Estado / Memoria *
+   ********************/
+  const ArkMem = {
+    key: 'arkaios_mem_v1',
+    data: {
+      name: 'ARKAIOS',
+      role: 'cientifico',
+      turns: 0,
+      notes: [],
+      registry_on: true,   // registro ON por defecto (memoria viva)
+      seen_ts: Date.now()
+    },
+    load(){
+      try{ const s = localStorage.getItem(this.key); if(s){ this.data = {...this.data, ...JSON.parse(s)} } }catch{}
+    },
+    save(){ try{ localStorage.setItem(this.key, JSON.stringify(this.data)) }catch{} }
+  };
+  ArkMem.load();
+
+  // UI memoria
+  const kv = document.getElementById('kv-core');
+  function paintKV(){
+    kv.innerHTML = '';
+    const rows = {
+      'Nombre': ArkMem.data.name,
+      'Rol': ArkMem.data.role,
+      'Turnos': ArkMem.data.turns,
+      'Registro': ArkMem.data.registry_on ? 'ON' : 'OFF'
+    };
+    for(const k in rows){
+      const K = document.createElement('div'); K.textContent = k;
+      const V = document.createElement('div'); V.textContent = rows[k];
+      kv.appendChild(K); kv.appendChild(V);
+    }
+    document.getElementById('mem-status').textContent = 'Memoria activa • Puter detectado ' + (window.puter ? '✓' : '✗');
+  }
+  paintKV();
+
+  // Export / Import / Clear
+  document.getElementById('btn-export').onclick = () => {
+    const blob = new Blob([JSON.stringify(ArkMem.data, null, 2)], {type:'application/json'});
+    const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download:'arkaios-mem.json'}); a.click();
+  };
+  document.getElementById('btn-import').onclick = () => document.getElementById('file-import').click();
+  document.getElementById('file-import').onchange = async e => {
+    const f = e.target.files?.[0]; if(!f) return;
+    const text = await f.text(); ArkMem.data = {...ArkMem.data, ...JSON.parse(text)}; ArkMem.save(); paintKV();
+  };
+  document.getElementById('btn-clear').onclick = () => { ArkMem.data.notes = []; ArkMem.save(); paintKV(); };
+
+  /****************
+   * Conectividad *
+   ****************/
+  const live = document.getElementById('live-ind');
+  function setLive(state){
+    live.classList.toggle('on', state==='on');
+    live.classList.toggle('off', state!=='on');
+    live.querySelector('.live-text').textContent = state==='on' ? 'ONLINE' : 'OFFLINE';
+  }
+  async function ping(){
+    try{
+      if (!window.puter) { setLive('off'); return; }
+      // intenta ping a server (misma origin)
+      const r = await fetch('/health').then(r=>r.json()).catch(()=>({ok:true}));
+      setLive('on');
+    }catch{ setLive('off'); }
+  }
+  setInterval(ping, 3500); ping(); // indicador vivo (pulso)
+
+  /*********
+   * Chat  *
+   *********/
+  const messages = document.getElementById('messages');
+  const promptEl = document.getElementById('prompt');
+  const modelSel = document.getElementById('modelSelector');
+  const roleSel  = document.getElementById('roleSelector');
+  const btnSend  = document.getElementById('btn-send');
+  const btnReset = document.getElementById('btn-reset');
+
+  // adjuntos (cola + previas con X)
+  const attachInput = document.getElementById('attach-input');
+  const previews = document.getElementById('previews');
+  const dropzone = document.getElementById('dropzone');
+  const drophelp = document.getElementById('drophelp');
+  const btnClearAttach = document.getElementById('btn-clear-attach');
+  let pending = []; // {file, url, name, type}
+
+  function addMsg(text, who='bot', attachments=[]){
+    const m = document.createElement('div'); m.className = 'msg ' + (who==='user'?'user':'bot');
+    m.innerHTML = text.replace(/\n/g,'<br/>');
+    if(attachments?.length){
+      const wrap = document.createElement('div'); wrap.style.marginTop='8px'; wrap.style.display='flex'; wrap.style.gap='8px'; wrap.style.flexWrap='wrap';
+      for(const a of attachments){
+        const chip = document.createElement('div'); chip.className='chip';
+        if(a.url && a.type?.startsWith('image/')){ const im=document.createElement('img'); im.src=a.url; chip.appendChild(im); }
+        const meta = document.createElement('b'); meta.textContent = a.name || a.type || 'archivo'; chip.appendChild(meta);
+        wrap.appendChild(chip);
+      }
+      m.appendChild(wrap);
+    }
+    messages.appendChild(m);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function addSys(text){ const d=document.createElement('div'); d.className='msg sys'; d.textContent=text; messages.appendChild(d); messages.scrollTop=messages.scrollHeight; }
+
+  function renderPreviews(){
+    previews.innerHTML = '';
+    pending.forEach((p, idx)=>{
+      const chip = document.createElement('div'); chip.className='chip';
+      if(p.url && p.type?.startsWith('image/')){ const im = document.createElement('img'); im.src = p.url; chip.appendChild(im); }
+      const meta = document.createElement('b'); meta.textContent = p.name; chip.appendChild(meta);
+      const x = document.createElement('span'); x.className='x'; x.textContent='✕';
+      x.onclick = ()=>{ pending.splice(idx,1); renderPreviews(); };
+      chip.appendChild(x);
+      previews.appendChild(chip);
+    });
+    drophelp.textContent = pending.length ? `${pending.length} adjunto(s) listo(s)` : 'Arrastra y suelta archivos aquí… o pega con Ctrl+V';
+  }
+
+  attachInput.onchange = e => {
+    const files = Array.from(e.target.files||[]);
+    files.forEach(f=> pending.push({file:f, url:URL.createObjectURL(f), name:f.name, type:f.type}));
+    renderPreviews(); attachInput.value='';
+  };
+  btnClearAttach.onclick = ()=>{ pending=[]; renderPreviews(); };
+
+  // Arrastrar/soltar
+  ;['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.add('dragover')}));
+  ;['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{e.preventDefault(); dropzone.classList.remove('dragover')}));
+  dropzone.addEventListener('drop', e=>{
+    const files = Array.from(e.dataTransfer.files||[]);
+    files.forEach(f=> pending.push({file:f, url:URL.createObjectURL(f), name:f.name, type:f.type}));
+    renderPreviews();
+  });
+  // Pegar desde portapapeles
+  window.addEventListener('paste', e=>{
+    const items = Array.from(e.clipboardData?.items||[]);
+    items.forEach(it=>{
+      if(it.kind==='file'){ const f=it.getAsFile(); pending.push({file:f, url:URL.createObjectURL(f), name:f.name||'clipboard.png', type:f.type}); }
+    });
+    renderPreviews();
+  });
+
+  // util FS (si Puter existe)
+  async function fsWrite(path, fileOrBlob){
+    if(!window.puter?.fs){ throw new Error('FS no disponible'); }
+    const arrBuf = await fileOrBlob.arrayBuffer();
+    const u8 = new Uint8Array(arrBuf);
+    await puter.fs.write(path, u8);
+    return path;
+  }
+  async function fsList(path='/home'){
+    if(!window.puter?.fs) throw new Error('FS no disponible');
+    return await puter.fs.list(path);
+  }
+
+  // Galería
+  async function refreshGallery(){
+    const gal = document.getElementById('gallery');
+    gal.innerHTML = '';
+    try{
+      const items = await fsList('/home');
+      for(const it of items){
+        const isImg = /\.(png|jpg|jpeg|webp)$/i.test(it.name||'');
+        if(!isImg) continue;
+        const card = document.createElement('div'); card.className='thumb';
+        const img = document.createElement('img'); img.src = it.url || (it.path ? it.path : '');
+        img.alt = it.name; card.appendChild(img);
+        const meta = document.createElement('div'); meta.className='meta'; meta.textContent = it.name; card.appendChild(meta);
+        gal.appendChild(card);
+      }
+    }catch(e){ /* sin galería si FS no existe */ }
+  }
+  document.getElementById('btn-gal-refresh').onclick = refreshGallery;
+
+  // Diagnóstico rápido (ver qué puentes tiene Puter)
+  document.getElementById('btn-diagnose').onclick = async ()=>{
+    let bridges = {responses_create:false, chat_completions_create:false, ai_chat:true, ai_complete:false, txt2img:false};
+    try{ bridges.ai_complete = !!(puter?.ai?.complete); }catch{}
+    try{ bridges.txt2img     = !!(puter?.ai?.txt2img); }catch{}
+    document.getElementById('diaglog').textContent =
+`Detección IA:
+{ has_ai: ${!!(puter?.ai)}, bridges: ${JSON.stringify(bridges)} }
+Ping … ok: pong`;
+  };
+
+  // FS helpers del panel
+  document.getElementById('btn-list').onclick = async ()=>{
+    try{ const items = await fsList('/home');
+      document.getElementById('fslog').textContent = (items||[]).map(i=> (i.name||i.path)).join('\n') || '(vacío)';
+    }catch(err){ document.getElementById('fslog').textContent = 'Error listando: '+(err.message||err); }
+  };
+  document.getElementById('btn-save').onclick = async ()=>{
+    try{
+      const content = 'Nota de Arkaios - '+new Date().toLocaleString();
+      await fsWrite('/home/nota_arkaios.txt', new Blob([content],{type:'text/plain'}));
+      document.getElementById('fslog').textContent = 'Nota guardada en /home';
+      refreshGallery();
+    }catch(err){ document.getElementById('fslog').textContent = 'Error guardando: '+(err.message||err); }
+  };
+
+  // Logging al servidor (si existe)
+  async function logRows(rows){
+    try{ await fetch('/api/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({rows})}) }catch{}
+  }
+  function pushTurn(who, text){ ArkMem.data.turns++; ArkMem.save(); paintKV(); logRows([{who,text}]); }
+
+  // promesas IA (con varios fallbacks de Puter)
+  async function chatLLM(text, opts={}){
+    // 1) intentamos puter.ai.chat (string directo)
+    try{
+      if(puter?.ai?.chat){
+        const r = await puter.ai.chat(text, { model: opts.model || 'gpt-4o' });
+        if (typeof r === 'string') return r;
+        if (r?.text) return r.text;
+        if (r?.message?.content) return r.message.content;
+        if (r?.choices?.[0]?.message?.content) return r.choices[0].message.content;
+      }
+    }catch(e){}
+    // 2) intentamos chat.completions.create
+    try{
+      if(puter?.ai?.chat?.completions?.create){
+        const r = await puter.ai.chat.completions.create({ model: opts.model||'gpt-4o', messages:[{role:'user', content:text}] });
+        return r?.choices?.[0]?.message?.content || '(sin respuesta)';
+      }
+    }catch(e){}
+    // 3) fallback simple
+    try{
+      if(puter?.ai?.complete){
+        const r = await puter.ai.complete(text, {model: opts.model||'gpt-4o'});
+        return typeof r==='string'? r : (r?.text||JSON.stringify(r));
+      }
+    }catch(e){}
+    // sin IA
+    return 'No hay puente de IA disponible ahora mismo.';
+  }
+
+  // texto → imagen (si hay puente, si no, mensaje)
+  async function txt2img(prompt){
+    // varios intentos
+    try{ if(puter?.ai?.txt2img){ const r = await puter.ai.txt2img(prompt, {size:'1024x1024'}); return r?.url || r; } }catch(e){}
+    try{ if(puter?.ai?.image?.generate){ const r = await puter.ai.image.generate({prompt}); return r?.url || r; } }catch(e){}
+    return null; // sin puente
+  }
+
+  async function send(){
+    const text = (promptEl.value||'').trim();
+    if(!text && pending.length===0) return;
+    const model = modelSel.value;
+    ArkMem.data.role = roleSel.value; ArkMem.save();
+
+    // Usuario
+    addMsg(text||'(enviando adjuntos)', 'user', pending);
+    pushTurn('user', text);
+
+    // subir adjuntos a /home (si Puter FS)
+    let uploaded = [];
+    if(pending.length && window.puter?.fs){
+      const dir = '/home';
+      for(const p of pending){
+        const safe = (p.name||('archivo_'+Date.now())).replace(/[^\w\.\-]+/g,'_');
+        const path = `${dir}/${safe}`;
+        try{
+          await fsWrite(path, p.file);
+          uploaded.push({name:p.name, type:p.type, path, url:p.url});
+        }catch(e){
+          uploaded.push({name:p.name, type:p.type, path:null, url:p.url, error:e.message||String(e)});
+        }
+      }
+    }
+    pending = []; renderPreviews();
+
+    // Comandos rápidos
+    const t = text.toLowerCase();
+
+    // ayuda
+    if(t==='ayuda'){ addSys('Escribe: "img: …", "analizar imagen <n|url>", "listar /home", "descomprimir <archivo.zip>", "crear archivo <ruta>: <contenido>", "leer archivo <ruta>"'); return; }
+
+    // listar
+    if(t.startsWith('listar')){
+      const path = text.replace(/listar\s*/i,'').trim() || '/home';
+      try{ const items = await fsList(path); addMsg('Listado de '+path+':\n'+(items||[]).map(i=>i.name||i.path).join('\n'),'bot'); }
+      catch(err){ addMsg('Error listando: '+(err.message||err),'bot'); }
+      return;
+    }
+
+    // descomprimir
+    if(t.startsWith('descomprimir')){
+      const path = text.replace(/descomprimir\s*/i,'').trim();
+      if(!path){ addMsg('Dime cuál .zip/.rar debo abrir.','bot'); return; }
+      try{
+        if(!window.puter?.fs) throw new Error('FS no disponible');
+        const data = await puter.fs.read(path); // Uint8Array
+        const zip = await JSZip.loadAsync(data);
+        const base = '/home/';
+        const names = [];
+        await Promise.all(Object.keys(zip.files).map(async fname=>{
+          const file = zip.files[fname];
+          if(file.dir) return;
+          const blob = await file.async('blob');
+          await fsWrite(base + fname.replace(/[^A-Za-z0-9._-]/g,'_'), blob);
+          names.push(fname);
+        }));
+        addMsg('Descomprimido ('+names.length+' archivos) en /home','bot'); refreshGallery();
+      }catch(err){ addMsg('Error descomprimiendo: '+(err.message||err),'bot'); }
+      return;
+    }
+
+    // crear archivo ruta: contenido
+    if(/^crear\s+archivo\s+/i.test(text)){
+      const m = text.match(/^crear\s+archivo\s+(.+?)\s*:\s*([\s\S]*)$/i);
+      if(!m){ addMsg('Formato: crear archivo /home/nota.txt: contenido','bot'); return; }
+      const [, path, content] = m;
+      try{ await fsWrite(path, new Blob([content],{type:'text/plain'})); addMsg('Archivo creado en '+path,'bot'); refreshGallery(); }
+      catch(err){ addMsg('Error creando: '+(err.message||err),'bot'); }
+      return;
+    }
+
+    // leer archivo
+    if(/^leer\s+archivo\s+/i.test(text)){
+      const path = text.replace(/^leer\s+archivo\s+/i,'').trim();
+      try{
+        if(!window.puter?.fs) throw new Error('FS no disponible');
+        const u8 = await puter.fs.read(path); const dec = new TextDecoder(); const tx = dec.decode(u8);
+        addMsg('Contenido de '+path+':\n'+tx,'bot');
+      }catch(err){ addMsg('Error leyendo: '+(err.message||err),'bot'); }
+      return;
+    }
+
+    // imagen
+    if(/^img\s*:/i.test(text)){
+      const prompt = text.replace(/^img\s*:\s*/i,'').trim();
+      addSys('Generando imagen…');
+      const url = await txt2img(prompt);
+      if(url){
+        addMsg('Imagen generada (guardada en /home si procede):', 'bot', [{name:'output.png', type:'image/png', url}]);
+        try{
+          if(window.puter?.fs){
+            const b = await fetch(url).then(r=>r.blob());
+            await fsWrite('/home/arkaios_img_'+Date.now()+'.png', b);
+            refreshGallery();
+          }
+        }catch{}
+      }else{
+        addMsg('No hay puente de txt2img disponible ahora mismo.','bot');
+      }
+      return;
+    }
+
+    // analizar imagen
+    if(/^analizar\s+imagen/i.test(text)){
+      // heurística: si usuario puso un índice, buscar en 'uploaded'
+      if(!uploaded.length){ addMsg('No hay imágenes adjuntas en este envío. Adjunta o pasa una URL.','bot'); return; }
+      const first = uploaded.find(u=>u.type?.startsWith('image/')) || uploaded[0];
+      const note = first?.path ? ` (ruta: ${first.path})` : '';
+      // Si el puente de visión no existe, avisar:
+      if(!puter?.ai?.chat){ addMsg('No tengo visión activa en este entorno. Guardé/adjunté la imagen'+note+'.','bot', uploaded); return; }
+      // Si el puente soporta "messages con imagen", intentarlo de manera robusta:
+      try{
+        let msg = `Describe la imagen de forma útil. Contexto: usuario pidió "analizar imagen".`;
+        const out = await chatLLM(msg, {model: model});
+        addMsg(out, 'bot', uploaded);
+      }catch(err){ addMsg('No pude procesar visión aquí: '+(err.message||err), 'bot', uploaded); }
+      return;
+    }
+
+    // normal → LLM
+    const out = await chatLLM(
+      `Eres ${ArkMem.data.name}. Rol: ${ArkMem.data.role}. Contesta en español, claro y directo.\n\nUsuario: ${text}`,
+      {model}
+    );
+    addMsg(out, 'bot'); pushTurn('bot', out);
+
+    // snapshot ligera
+    try{ fetch('/api/session', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mem:ArkMem.data, last_user:text, last_bot:out})}) }catch{}
+  }
+
+  btnSend.onclick = send;
+  promptEl.addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) send(); });
+  btnReset.onclick = ()=>{ messages.innerHTML=''; addSys('Bienvenido. Soy ARKAIOS. Escribe "ayuda" para ver mis comandos.'); };
+
+  // Arranque
+  (function boot(){
+    roleSel.value = ArkMem.data.role || 'cientifico';
+    modelSel.value = 'gpt-4o';
+    addSys('Bienvenido. Soy ARKAIOS. Escribe "ayuda" para ver mis comandos.');
+    ping(); refreshGallery();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARKAIOS — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f7f8fb;--panel:#fff;--muted:#667085;--text:#111827;--brand:#2563eb;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px}
+    *{box-sizing:border-box} 
+    html,body{height:100%} 
+    body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .wrap{min-height:100%;display:grid;place-items:center;padding:40px}
+    .card{width:min(440px,92vw);background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;border:1px solid #eef2f7;text-align:center}
+    .logo{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;background:#0ea5e9;box-shadow:0 8px 20px rgba(14,165,233,.25)}
+    .logo img{width:46px;height:46px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+    h1{margin:10px 0 4px;font-size:24px}
+    .muted{color:var(--muted);font-size:14px;margin:0 0 18px}
+    .btn{border:0;cursor:pointer;font-weight:600;padding:12px 14px;border-radius:12px;background:var(--brand);color:#fff;box-shadow:0 8px 24px rgba(37,99,235,.25);width:100%;transition:all 0.2s}
+    .btn:hover{background:#1d4ed8;transform:translateY(-1px)}
+    .btn-outline{background:#fff;color:var(--text);border:1px solid #e5e7eb;box-shadow:none;width:100%;transition:all 0.2s}
+    .btn-outline:hover{border-color:#d1d5db;background:#f9fafb}
+    .or{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:16px 0}
+    .or::before,.or::after{content:"";height:1px;background:#e5e7eb}
+    .loading{display:none;color:var(--muted);font-size:14px;margin-top:10px}
+    .error{color:#dc2626;font-size:14px;margin-top:10px;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;display:none}
+  </style>
+
+  <script>
+    // Configuración dinámica basada en el dominio actual
+    function getConfig() {
+      const hostname = window.location.hostname;
+      
+      if (hostname.includes('base44.app')) {
+        return {
+          server: "https://arkaios.base44.app",
+          clientId: "68b4753bfb995cda5a39d358" // Reemplazar con tu Client ID para base44.app
+        };
+      } else if (hostname.includes('vercel.app')) {
+        return {
+          server: "https://aeio-mr.vercel.app",
+          clientId: "1077454579238-qlgvl5g039hj2f1hjcpkbp9n0m1k3ql6.apps.googleusercontent.com"
+        };
+      } else {
+        // Localhost o desarrollo
+        return {
+          server: "http://127.0.0.1:5000",
+          clientId: "1077454579238-qlgvl5g039hj2f1hjcpkbp9n0m1k3ql6.apps.googleusercontent.com"
+        };
+      }
+    }
+
+    const config = getConfig();
+    window.ARK_SERVER = config.server;
+    window.GOOGLE_CLIENT_ID = config.clientId;
+
+    // Función mejorada para manejar el login de Google
+    async function onSignIn(resp) {
+      showLoading(true);
+      hideError();
+      
+      try {
+        const response = await fetch(`${window.ARK_SERVER}/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({credential: resp.credential})
+        });
+        
+        const data = await response.json();
+        
+        if (data.ok) {
+          // Guardar datos del usuario
+          localStorage.setItem('ark_token', data.token || '');
+          localStorage.setItem('ark_user', JSON.stringify(data.user || {}));
+          
+          // Redirigir a la aplicación principal
+          window.location.href = 'arkaios-integrated.html';
+        } else {
+          throw new Error(data.message || 'Error de autenticación');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showError('Error de autenticación: ' + error.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Función para login demo
+    async function demoLogin() {
+      showLoading(true);
+      hideError();
+      
+      try {
+        const response = await fetch(`${window.ARK_SERVER}/auth/google`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({credential: null})
+        });
+        
+        const data = await response.json();
+        
+        if (data.ok) {
+          localStorage.setItem('ark_token', data.token || '');
+          localStorage.setItem('ark_user', JSON.stringify(data.user || {email: 'demo@arkaios.com', name: 'Usuario Demo'}));
+          
+          // Redirigir a la aplicación principal
+          window.location.href = 'arkaios-integrated.html';
+        } else {
+          throw new Error('No se pudo iniciar el modo demo');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showError('Error en modo demo: ' + error.message);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Usar el login que funciona desde base44.app como fallback
+    function useWorkingLogin() {
+      showLoading(true);
+      
+      // Crear un iframe oculto para hacer el login en el dominio que funciona
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://arkaios.base44.app/login?from_url=' + encodeURIComponent(window.location.origin);
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+
+      // Escuchar el mensaje del iframe
+      window.addEventListener('message', function(event) {
+        if (event.origin !== 'https://arkaios.base44.app') return;
+        
+        if (event.data.type === 'LOGIN_SUCCESS') {
+          // Guardar los datos recibidos
+          localStorage.setItem('ark_token', event.data.token);
+          localStorage.setItem('ark_user', JSON.stringify(event.data.user));
+          
+          // Redirigir a la aplicación principal
+          window.location.href = 'arkaios-integrated.html';
+        } else if (event.data.type === 'LOGIN_ERROR') {
+          showError('Error de autenticación: ' + event.data.message);
+          showLoading(false);
+        }
+        
+        // Limpiar el iframe
+        document.body.removeChild(iframe);
+      });
+    }
+
+    // Funciones auxiliares para UI
+    function showLoading(show) {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.style.display = show ? 'block' : 'none';
+      }
+    }
+
+    function showError(message) {
+      const error = document.getElementById('error');
+      if (error) {
+        error.textContent = message;
+        error.style.display = 'block';
+      }
+    }
+
+    function hideError() {
+      const error = document.getElementById('error');
+      if (error) {
+        error.style.display = 'none';
+      }
+    }
+
+    // Verificar si ya está logueado
+    window.addEventListener('load', function() {
+      const token = localStorage.getItem('ark_token');
+      if (token) {
+        window.location.href = 'arkaios-integrated.html';
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">
+        <img alt="ARKAIOS" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/openai.svg">
+      </div>
+      <h1>Welcome to ARKAIOS</h1>
+      <p class="muted">Inicia sesión para continuar</p>
+
+      <!-- Error message -->
+      <div id="error" class="error"></div>
+
+      <!-- Google Identity Services -->
+      <div id="g_id_onload"
+           data-client_id=""
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="onSignIn"
+           data-auto_prompt="false"></div>
+      <div class="g_id_signin"
+           data-type="standard" 
+           data-shape="rectangular" 
+           data-theme="outline"
+           data-text="continue_with" 
+           data-size="large" 
+           data-logo_alignment="left"></div>
+
+      <div class="or">o</div>
+      
+      <!-- Botón para usar el login que funciona -->
+      <button class="btn" onclick="useWorkingLogin()">
+        Continuar con Login Seguro
+      </button>
+      
+      <div class="or">o</div>
+      
+      <!-- Demo login -->
+      <button class="btn-outline" onclick="demoLogin()">
+        Entrar sin cuenta (demo)
+      </button>
+
+      <!-- Loading indicator -->
+      <div id="loading" class="loading">Iniciando sesión...</div>
+    </div>
+  </div>
+
+  <script>
+    // Configurar el Client ID dinámicamente
+    document.addEventListener('DOMContentLoaded', function() {
+      const onloadDiv = document.getElementById('g_id_onload');
+      if (onloadDiv) {
+        onloadDiv.setAttribute('data-client_id', window.GOOGLE_CLIENT_ID);
+      }
+    });
+  </script>
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>
