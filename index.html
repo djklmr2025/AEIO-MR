@@ -1,19 +1,287 @@
-// En tu página de login exitoso
-const urlParams = new URLSearchParams(window.location.search);
-const returnUrl = urlParams.get('return_url');
-const appOrigin = urlParams.get('app_origin');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARKAIOS — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f7f8fb;--panel:#fff;--muted:#667085;--text:#111827;--brand:#2563eb;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px}
+    *{box-sizing:border-box} 
+    html,body{height:100%} 
+    body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+    .wrap{min-height:100%;display:grid;place-items:center;padding:40px}
+    .card{width:min(440px,92vw);background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;border:1px solid #eef2f7;text-align:center}
+    .logo{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;background:#0ea5e9;box-shadow:0 8px 20px rgba(14,165,233,.25)}
+    .logo img{width:46px;height:46px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+    h1{margin:10px 0 4px;font-size:24px}
+    .muted{color:var(--muted);font-size:14px;margin:0 0 18px}
+    .btn{border:0;cursor:pointer;font-weight:600;padding:12px 14px;border-radius:12px;background:var(--brand);color:#fff;box-shadow:0 8px 24px rgba(37,99,235,.25);width:100%;transition:all 0.2s}
+    .btn:hover{background:#1d4ed8;transform:translateY(-1px)}
+    .btn:disabled{background:#9ca3af;cursor:not-allowed;transform:none}
+    .btn-outline{background:#fff;color:var(--text);border:1px solid #e5e7eb;box-shadow:none;width:100%;transition:all 0.2s}
+    .btn-outline:hover:not(:disabled){border-color:#d1d5db;background:#f9fafb}
+    .btn-success{background:#10b981;color:#fff}
+    .btn-success:hover{background:#059669}
+    .or{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:16px 0}
+    .or::before,.or::after{content:"";height:1px;background:#e5e7eb}
+    .loading{color:var(--muted);font-size:14px;margin-top:10px}
+    .error{color:#dc2626;font-size:14px;margin:10px 0;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px}
+    .success{color:#059669;font-size:14px;margin:10px 0;padding:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px}
+    .login-option{margin:8px 0;padding:12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;transition:all 0.2s}
+    .login-option:hover{border-color:#d1d5db;background:#f9fafb}
+    .hidden{display:none}
+    
+    /* Animación de carga */
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #e5e7eb;border-radius:50%;border-top-color:#2563eb;animation:spin 1s linear infinite;margin-right:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">
+        <img alt="ARKAIOS" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/openai.svg">
+      </div>
+      <h1>Welcome to ARKAIOS</h1>
+      <p class="muted">Inicia sesión para continuar</p>
 
-if (returnUrl && appOrigin) {
-    // Si es popup mode
-    if (urlParams.get('mode') === 'popup') {
-        window.opener.postMessage({
-            type: 'LOGIN_SUCCESS',
-            token: 'tu_token_aqui',
-            user: userData
-        }, appOrigin);
-        window.close();
-    } else {
-        // Si es redirect
-        window.location.href = `${returnUrl}?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
+      <!-- Mensajes -->
+      <div id="error" class="error hidden"></div>
+      <div id="success" class="success hidden"></div>
+      <div id="loading" class="loading hidden">
+        <span class="spinner"></span>Conectando...
+      </div>
+
+      <!-- Opciones de login -->
+      <div id="login-options">
+        
+        <!-- Opción 1: Redireccionar al login que funciona -->
+        <div class="login-option">
+          <h3 style="margin:0 0 8px;font-size:16px">🔒 Login Seguro (Recomendado)</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">
+            Te redirigiremos a nuestro servidor de autenticación seguro
+          </p>
+          <button class="btn" onclick="redirectToSecureLogin()">
+            Continuar de forma segura
+          </button>
+        </div>
+
+        <div class="or">o</div>
+
+        <!-- Opción 2: Login directo (si funciona) -->
+        <div class="login-option">
+          <h3 style="margin:0 0 8px;font-size:16px">📱 Login Directo</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">
+            Usar Google OAuth directamente (puede fallar por configuración)
+          </p>
+          <button class="btn-outline" onclick="tryDirectLogin()">
+            Probar login directo
+          </button>
+        </div>
+
+        <div class="or">o</div>
+
+        <!-- Opción 3: Demo -->
+        <div class="login-option">
+          <h3 style="margin:0 0 8px;font-size:16px">🎯 Modo Demo</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">
+            Accede sin cuenta para probar la aplicación
+          </p>
+          <button class="btn-outline" onclick="enterDemoMode()">
+            Entrar en modo demo
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuración
+    const CONFIG = {
+      SECURE_LOGIN_URL: 'https://arkaios.base44.app/login',
+      FALLBACK_SERVER: 'http://127.0.0.1:5000',
+      APP_FILE: 'arkaios-integrated.html'
+    };
+
+    // Funciones auxiliares
+    function showMessage(type, message) {
+      hideAllMessages();
+      const element = document.getElementById(type);
+      if (element) {
+        element.textContent = message;
+        element.classList.remove('hidden');
+      }
     }
-}
+
+    function hideAllMessages() {
+      ['error', 'success', 'loading'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.classList.add('hidden');
+      });
+    }
+
+    function showLoading(message = 'Cargando...') {
+      showMessage('loading', message);
+    }
+
+    function disableButtons(disabled = true) {
+      document.querySelectorAll('button').forEach(btn => {
+        btn.disabled = disabled;
+      });
+    }
+
+    // Opción 1: Redirigir al login seguro
+    function redirectToSecureLogin() {
+      showLoading('Redirigiendo al login seguro...');
+      
+      // Construir URL con parámetros de retorno
+      const returnUrl = encodeURIComponent(window.location.origin + '/' + CONFIG.APP_FILE);
+      const loginUrl = `${CONFIG.SECURE_LOGIN_URL}?return_url=${returnUrl}&app_origin=${encodeURIComponent(window.location.origin)}`;
+      
+      // Guardar estado para detectar el retorno
+      localStorage.setItem('ark_login_attempt', Date.now().toString());
+      
+      // Redirigir
+      setTimeout(() => {
+        window.location.href = loginUrl;
+      }, 1000);
+    }
+
+    // Opción 2: Login directo con Google (puede fallar)
+    function tryDirectLogin() {
+      showLoading('Intentando login directo...');
+      disableButtons(true);
+
+      // Crear un popup para evitar problemas de CORS
+      const popup = window.open(
+        `${CONFIG.SECURE_LOGIN_URL}?mode=popup&origin=${encodeURIComponent(window.location.origin)}`,
+        'login',
+        'width=500,height=600,scrollbars=yes,resizable=yes'
+      );
+
+      // Escuchar mensajes del popup
+      const messageListener = (event) => {
+        if (event.origin !== 'https://arkaios.base44.app') return;
+
+        if (event.data.type === 'LOGIN_SUCCESS') {
+          localStorage.setItem('ark_token', event.data.token || 'demo_token');
+          localStorage.setItem('ark_user', JSON.stringify(event.data.user || {
+            email: event.data.email || 'user@arkaios.com',
+            name: event.data.name || 'Usuario'
+          }));
+          
+          showMessage('success', '¡Login exitoso! Redirigiendo...');
+          popup.close();
+          window.removeEventListener('message', messageListener);
+          
+          setTimeout(() => {
+            window.location.href = CONFIG.APP_FILE;
+          }, 1500);
+          
+        } else if (event.data.type === 'LOGIN_ERROR') {
+          showMessage('error', 'Error de autenticación: ' + (event.data.message || 'Error desconocido'));
+          popup.close();
+          window.removeEventListener('message', messageListener);
+          disableButtons(false);
+        }
+      };
+
+      window.addEventListener('message', messageListener);
+
+      // Timeout para el popup
+      setTimeout(() => {
+        if (!popup.closed) {
+          popup.close();
+          window.removeEventListener('message', messageListener);
+          showMessage('error', 'Timeout: La ventana de login tardó demasiado en responder');
+          disableButtons(false);
+        }
+      }, 30000);
+
+      // Verificar si el popup se cerró manualmente
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageListener);
+          hideAllMessages();
+          disableButtons(false);
+        }
+      }, 1000);
+    }
+
+    // Opción 3: Modo demo
+    function enterDemoMode() {
+      showLoading('Iniciando modo demo...');
+      disableButtons(true);
+
+      // Simular un pequeño delay para parecer más real
+      setTimeout(() => {
+        // Crear datos de usuario demo
+        const demoUser = {
+          email: 'demo@arkaios.com',
+          name: 'Usuario Demo',
+          avatar: 'https://via.placeholder.com/40',
+          demo: true
+        };
+
+        // Guardar en localStorage
+        localStorage.setItem('ark_token', 'demo_token_' + Date.now());
+        localStorage.setItem('ark_user', JSON.stringify(demoUser));
+
+        showMessage('success', '¡Modo demo activado! Redirigiendo...');
+
+        setTimeout(() => {
+          window.location.href = CONFIG.APP_FILE;
+        }, 1500);
+      }, 1000);
+    }
+
+    // Verificar si ya está logueado al cargar
+    window.addEventListener('load', function() {
+      const token = localStorage.getItem('ark_token');
+      const user = localStorage.getItem('ark_user');
+      
+      if (token && user) {
+        showMessage('success', 'Ya tienes una sesión activa. Redirigiendo...');
+        setTimeout(() => {
+          window.location.href = CONFIG.APP_FILE;
+        }, 1500);
+      }
+    });
+
+    // Verificar si viene de un intento de login
+    window.addEventListener('load', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const user = urlParams.get('user');
+      
+      if (token) {
+        try {
+          const userData = user ? JSON.parse(decodeURIComponent(user)) : {
+            email: 'user@arkaios.com',
+            name: 'Usuario'
+          };
+          
+          localStorage.setItem('ark_token', token);
+          localStorage.setItem('ark_user', JSON.stringify(userData));
+          
+          showMessage('success', '¡Login exitoso! Redirigiendo...');
+          
+          // Limpiar URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          setTimeout(() => {
+            window.location.href = CONFIG.APP_FILE;
+          }, 1500);
+        } catch (error) {
+          showMessage('error', 'Error al procesar los datos de login');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
