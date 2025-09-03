@@ -38,6 +38,10 @@ ARKAIOS es un núcleo de IA que actúa como:
 - **Descompresión**: Soporte para ZIP/RAR automático
 - **Galería visual**: Visualización de imágenes almacenadas
 
+- Integracion Focus Modulo Creador de Imagenes en HD/4K
+- Link para levantar servidor Online: (https://colab.research.google.com/github/lllyasviel/Fooocus/blob/main/fooocus_colab.ipynb)
++Info: (https://github.com/djklmr2025/AEIO-MR/blob/vercel/fooocus_colab.ipynb)
+
 ### 🎨 Generación de Contenido
 - **Texto a imagen**: Generación automática con guardado en `/home`
 - **Análisis visual**: Procesamiento de imágenes adjuntas
