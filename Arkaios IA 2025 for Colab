@@ -1,0 +1,63 @@
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "VjYy0F2gZIPR"
+      },
+      "outputs": [],
+      "source": [
+        "%cd /content\n",
+        "!rm -rf AEIO-MR\n",
+        "!git clone https://github.com/djklmr2025/AEIO-MR\n",
+        "%cd /content/AEIO-MR\n",
+        "!pip install flask flask-cors flask-socketio eventlet\n",
+        "!python server_arkaios.py --share --always-high-vram"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install pyngrok\n",
+        "from pyngrok import ngrok\n",
+        "\n",
+        "# Tu token de ngrok\n",
+        "NGROK_AUTH_TOKEN = \"32AwHmDcHcu8VoBjfh67UQ6EGFo_4fUMiZbTuPkXr4fnLYFhC\"\n",
+        "ngrok.set_auth_token(NGROK_AUTH_TOKEN)\n",
+        "\n",
+        "public_url = ngrok.connect(5000)\n",
+        "print(\"🎉 ¡SERVIDOR ACTIVO!\")\n",
+        "print(\"🌐 URL Pública:\", public_url)\n",
+        "print(\"🔗 Comparte:\", public_url)\n",
+        "print(\"📚 Docs:\", public_url + \"/docs\")\n",
+        "\n",
+        "# Mantener activo\n",
+        "import time\n",
+        "while True:\n",
+        "    time.sleep(60)"
+      ],
+      "metadata": {
+        "id": "9WORJadUAxdg"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "accelerator": "GPU",
+    "colab": {
+      "gpuType": "T4",
+      "provenance": []
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 0
+}
