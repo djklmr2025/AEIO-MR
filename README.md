@@ -15,6 +15,7 @@ Prueba la IA en servidor Remoro Google para seguridad contra Root/Sudo & Super U
 ![Platform](https://img.shields.io/badge/platform-Android%20%7C%20Web-blue.svg)
 ![AI](https://img.shields.io/badge/AI-GPT--4o%20%7C%20Claude-purple.svg)
 ![OS](https://img.shields.io/badge/OS-Puter%20Linux-orange.svg)
+![Open In Colab](https://colab.research.google.com/github/djklmr2025/AEIO-MR/blob/main/arkaios%20colab.ipynb) 
 
 ## 📋 Descripción
 
